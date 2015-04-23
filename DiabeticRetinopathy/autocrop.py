@@ -1,9 +1,7 @@
-import os
-import skimage
-from skimage import io, util
 import numpy as np
+from skimage.util import crop
 
-def autocrop(img):
+def crop_manual(img):
     s = np.sum(img, axis=2)
     cols = np.sum(s, axis=0) 
     rows = np.sum(s, axis=1)
@@ -12,4 +10,4 @@ def autocrop(img):
     upper_border = np.argmax(rows[0:len(rows)/2] > 10000)
     lower_border = len(rows)/2 - np.argmax(rows[len(rows)/2:len(rows)-1] < 10000)
     
-    return skimage.util.crop(img, ((upper_border, lower_border),(left_border, right_border),  (0,0)))
+    return crop(img, ((upper_border, lower_border),(left_border, right_border),  (0,0)))
