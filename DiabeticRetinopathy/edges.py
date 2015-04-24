@@ -7,6 +7,9 @@ import cv2
 from skimage.color.colorconv import rgb2gray
 from autocrop import crop_manual
 
+in_path = path.normpath('c:/kaggle/retina/train/raw')
+out_path = path.normpath('c:/kaggle/retina/train/cropped')
+
 def do_cropping(eye, edge):
     row_dim, col_dim = np.nonzero(edge)
 
@@ -30,20 +33,20 @@ def crop_sk(eye):
     edges = canny(red_eye, sigma=3)
     return do_cropping(eye, edges)
 
-root = path.normpath('c:/kaggle/retina/train')
-an_eye = path.join(root, '20677_left.jpeg')
-eye = io.imread(an_eye)
-#eye_cv = cv2.imread(an_eye, cv2.IMREAD_GRAYSCALE)
+def test():
+    an_eye = path.join(root, '20677_left.jpeg')
+    eye = io.imread(an_eye)
+    #eye_cv = cv2.imread(an_eye, cv2.IMREAD_GRAYSCALE)
 
 
-# get just one channel
-cropped = crop_sk(eye)
-cropped1 = crop_cv(eye)
-cropped2 = crop_manual(eye)
+    # get just one channel
+    cropped = crop_sk(eye)
+    cropped1 = crop_cv(eye)
+    cropped2 = crop_manual(eye)
 
-f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
-ax1.imshow(eye)
-ax2.imshow(cropped)
-ax3.imshow(cropped1)
-ax4.imshow(cropped2)
-plt.show()
+    f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
+    ax1.imshow(eye)
+    ax2.imshow(cropped)
+    ax3.imshow(cropped1)
+    ax4.imshow(cropped2)
+    plt.show()
