@@ -12,4 +12,4 @@ def crop_manual(img):
     upper_border = np.argmax(rows[0:len(rows)/2])
     lower_border = np.argmax(rows[len(rows)-1:len(rows)/2:-1])
   
-    return skimage.util.crop(img, ((upper_border, lower_border),(left_border, right_border),  (0,0)))
+    return crop(img, ((upper_border, lower_border),(left_border, right_border),  (0,0)))

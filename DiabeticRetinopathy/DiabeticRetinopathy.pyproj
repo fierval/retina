@@ -22,6 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="autocrop.py" />
     <Compile Include="edges.py" />
   </ItemGroup>
   <ItemGroup>
