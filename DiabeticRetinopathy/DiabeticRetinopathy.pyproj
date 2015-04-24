@@ -26,6 +26,7 @@
     <Compile Include="edges.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Crop on IPython Cluster.ipynb" />
     <Content Include="Cropping.ipynb" />
   </ItemGroup>
   <PropertyGroup>
