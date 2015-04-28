@@ -5,7 +5,23 @@ from skimage.feature import canny
 import numpy as np
 import cv2
 from skimage.color.colorconv import rgb2gray
-from autocrop import crop_manual
+from skimage.util import crop
+
+def crop_manual(img):
+    '''
+    Set the "threshold" & crop based on when we have reached it
+    '''
+    threshold = 20000
+    s = np.sum(img, axis=2)
+    cols = np.sum(s, axis=0) > threshold  
+    rows = np.sum(s, axis=1) > threshold
+    
+    left_border = np.argmax(cols[0:len(cols)/2])
+    right_border = np.argmax(cols[len(cols)-1:len(cols)/2:-1])
+    upper_border = np.argmax(rows[0:len(rows)/2])
+    lower_border = np.argmax(rows[len(rows)-1:len(rows)/2:-1])
+  
+    return crop(img, ((upper_border, lower_border),(left_border, right_border),  (0,0)))
 
 in_path = path.normpath('c:/kaggle/retina/train/raw')
 out_path = path.normpath('c:/kaggle/retina/train/cropped')

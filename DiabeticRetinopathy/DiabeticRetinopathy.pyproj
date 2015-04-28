@@ -5,9 +5,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>848a3024-25d2-483f-9116-ad78bdd8a838</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>edges.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <StartupFile>Features\edges.py</StartupFile>
+    <SearchPath>Features\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DiabeticRetinopathy</Name>
@@ -22,12 +21,19 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="autocrop.py" />
-    <Compile Include="edges.py" />
+    <Compile Include="Features\edges.py" />
+    <Compile Include="Features\extract_1dlbp_images_features.py" />
+    <Compile Include="Features\train_files.py" />
+    <Compile Include="Features\tr_utils.py" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Crop on IPython Cluster.ipynb" />
-    <Content Include="Cropping.ipynb" />
+    <Content Include="Features\Crop on IPython Cluster.ipynb" />
+    <Content Include="Features\Cropping.ipynb" />
+    <Content Include="Features\Resizing.ipynb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Learning\" />
+    <Folder Include="Features\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
