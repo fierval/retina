@@ -102,7 +102,7 @@ def get_1dlbp_features(neighborhood):
     outs = np.array([])
 
     i = 0
-    writeBatch = 200
+    writeBatch = 100
     prep_out_path(out_path)
 
     p = 1 << np.array(range(0, 2 * neighborhood), dtype='int32')
@@ -113,7 +113,7 @@ def get_1dlbp_features(neighborhood):
         data_file = path.join(inp_path, inp)
 
         out_file = path.join(out_path, path.splitext(inp)[0] + ext)
-        arr = imread(data_file)[2].reshape(-1)
+        arr = np.ascontiguousarray(imread(data_file)[:, :, 2].reshape(-1))
 
         ##GPU##
         file_hist = extract_1dlbp_gpu(arr, neighborhood, d_powers)
@@ -129,7 +129,6 @@ def get_1dlbp_features(neighborhood):
         if i == writeBatch:
             i = 0
             first = True
-            print "Writing....."
             for j in range(0, outs.shape[0]):
                 hist[j].tofile(outs[j])
             hist = np.array([])
@@ -147,6 +146,8 @@ def get_1dlbp_features(neighborhood):
 
     print "==============Done==================="
 
+neighborhood = 4
+get_1dlbp_features(neighborhood)
 tf = TrainFiles(out_path, labels_file='/kaggle/retina/trainLabels.csv', test_size = 0.1)
 X, Y, _, _ = tf.prepare_inputs()
 tf.dump_to_csv(path.join(root_path, '1dlbp.csv'), X, Y)
