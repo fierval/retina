@@ -108,7 +108,7 @@ class TrainFiles(object):
         dfX.columns=np.r_[[id], range(X.shape[1] - 1)]
         dfX = dfX.merge(self.labels, how='inner', on=id)
         
-        return np.array(dfX[range(1, X.shape[1])]).astype(float), np.array(dfX.Class).astype(int)
+        return np.array(dfX[range(1, X.shape[1])]).astype(float), np.array(dfX[self.labels.columns[1]]).astype(int)
 
     def _get_inp_input_path(self, training):
         inputs = self.get_training_inputs() if training else self.get_val_inputs()
@@ -123,6 +123,7 @@ class TrainFiles(object):
         else:
             X_train, Y_train = self.connect_labeled_data(True, load_func)
             X_train, X_test, Y_train, Y_test = train_test_split(X_train, Y_train, test_size = self.test_size, random_state = 1234)
+            print X_test.shape, Y_test.shape
         return X_train, Y_train, X_test, Y_test
 
     def prepare_inputs(self):
@@ -134,7 +135,7 @@ class TrainFiles(object):
             zip = ZipFile(inp_path)
 
         load_func = (lambda inp_file: np.fromfile(inp_file, dtype='int') if not zip else np.frombuffer(zip.read(inp_file), dtype='int'))
-        self._prepare_inputs(load_func)
+        return self._prepare_inputs(load_func)
 
     def prepare_inputs_csv(self):
         return self._prepare_inputs(np.loadtxt)
