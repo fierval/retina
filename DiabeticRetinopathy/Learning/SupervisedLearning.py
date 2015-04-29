@@ -193,7 +193,12 @@ class SKSupervisedLearning (object):
         self._proba_train = self.clf.predict_proba(X_train)
         self._proba_test = self.clf.predict_proba(X_test)
 
-        return metrics.log_loss(Y_train, self.proba_train), np.array([]) if isEmpty(Y_test) else metrics.log_loss(Y_test, self.proba_test)
+        score_func = metrics.log_loss
+        # TODO: add more metrics
+        if self.scoring == "accuracy" :
+            score_func = metrics.accuracy_score
+
+        return score_func(Y_train, self.proba_train), np.array([]) if isEmpty(Y_test) else score_func(Y_test, self.proba_test)
 
     def predict_actual(self, X_actual_test):
         '''

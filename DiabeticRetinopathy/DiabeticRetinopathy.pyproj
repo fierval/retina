@@ -31,6 +31,9 @@
     <Compile Include="Learning\get_sample.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Learning\gradient_boosting.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Learning\SupervisedLearning.py" />
   </ItemGroup>
   <ItemGroup>
