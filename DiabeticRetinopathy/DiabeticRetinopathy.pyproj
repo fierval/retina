@@ -6,7 +6,7 @@
     <ProjectGuid>848a3024-25d2-483f-9116-ad78bdd8a838</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>Features\edges.py</StartupFile>
-    <SearchPath>Features\</SearchPath>
+    <SearchPath>Features\;Learning\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DiabeticRetinopathy</Name>
@@ -25,6 +25,13 @@
     <Compile Include="Features\extract_1dlbp_images_features.py" />
     <Compile Include="Features\train_files.py" />
     <Compile Include="Features\tr_utils.py" />
+    <Compile Include="Learning\environment.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Learning\get_sample.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Learning\SupervisedLearning.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Features\Crop on IPython Cluster.ipynb" />

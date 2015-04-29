@@ -148,6 +148,6 @@ def get_1dlbp_features(neighborhood):
 
 neighborhood = 4
 get_1dlbp_features(neighborhood)
-tf = TrainFiles(out_path, labels_file='/kaggle/retina/trainLabels.csv', test_size = 0.1)
+tf = TrainFiles(out_path, labels_file='/kaggle/retina/trainLabels.csv', test_size = 0.0)
 X, Y, _, _ = tf.prepare_inputs()
 tf.dump_to_csv(path.join(root_path, '1dlbp.csv'), X, Y)

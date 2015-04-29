@@ -160,4 +160,6 @@ class TrainFiles(object):
         X = np.loadtxt(csvf, delimiter = ',', skiprows = 1 if skip else 0)
         Y = X[:, -1]
         X = X[:, :-1].astype('float')
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = test_size)
+        return X_train, Y_train, X_test, Y_test
 
