@@ -125,9 +125,7 @@ class SKSupervisedLearning (object):
         '''
         If we have scaled examples - pick them, else pick X_train, X_test
         '''
-        return (self.X_train, self.X_test) \
-            if isEmpty(self.X_train_scaled) or isEmpty(self.X_test_scaled) \
-            else (self.X_train_scaled, self.X_test_scaled)
+        return (self.X_train, self.X_test) if isEmpty(self.X_train_scaled) or isEmpty(self.X_test_scaled) else (self.X_train_scaled, self.X_test_scaled)
 
     def remove_scaling(self):
         self.X_test_scaled = None
@@ -176,11 +174,8 @@ class SKSupervisedLearning (object):
         self._scaler = self._fit_scaler(prep.StandardScaler, self.X_train)
         self.X_train_scaled = self._scaler.transform(self.X_train)
         self.X_test_scaled = self._scaler.transform(self.X_test)
-        
-    def fit_and_validate(self):
-        '''
-        Returns training & testing log loss
-        '''
+    
+    def fit(self):
         X_train, X_test = self._pick_examples()
 
         # shorthand
@@ -192,13 +187,27 @@ class SKSupervisedLearning (object):
         # get probabilities
         self._proba_train = self.clf.predict_proba(X_train)
         self._proba_test = self.clf.predict_proba(X_test)
+    
+    def score(self):
+        '''
+        args: X, Y or probabilities, Y (labels)
+        '''
+        X_train, X_test = self._pick_examples()
+        Y_train, Y_test = self.Y_train, self.Y_test
 
-        score_func = metrics.log_loss
         # TODO: add more metrics
-        if self.scoring == "accuracy" :
-            score_func = metrics.accuracy_score
+        if self.scoring == 'accuracy':
+            return self.clf.score(X_train, Y_train), np.array([]) if isEmpty(Y_test) else self.clf.score(X_test, Y_test)
+        else: #log loss for now
+            return metrics.log_loss(Y_train, self.proba_train), np.array([]) if isEmpty(Y_test) else metrics.log_loss(Y_test, self.proba_test)
+                            
+    def fit_and_validate(self):
+        '''
+        Returns training & testing log loss
+        '''
+        self.fit()
+        return self.score()
 
-        return score_func(Y_train, self.proba_train), np.array([]) if isEmpty(Y_test) else score_func(Y_test, self.proba_test)
 
     def predict_actual(self, X_actual_test):
         '''
