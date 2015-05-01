@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 def buildColorMap(target):
     """ Given an array of target values prepare a colormap 
     that can assign a proper color to each value. """
-    minVal = np.min(target)
-    maxVal = max(np.max(target), minVal + 0.1) # protect from the singular case
+    minVal = min(target)
+    maxVal = max(max(target), minVal + 0.1) # protect from the singular case
      
-    # We avoid edges of the rainbow since they both look black to humans
+    # We avoid the edges of the rainbow since they both look blackish to humans
     return lambda x: plt.cm.rainbow(0.1 + 0.8 * (x - minVal)/(maxVal - minVal))
 
 def vis3D(data, **kwargs):
