@@ -6,17 +6,21 @@ import numpy as np
 import math
 
 def circularcrop(img, border=200, threshold=20000, threshold1=100):
-	"""
-	This function trims the circular image by border pixels, nullifies outside borders
-	and crops the total img to the disk size
-	
-	parameters:
-	img: retina image to be processed
-	border: width of the border that will be trimmed from the disk. This allows to get 
-	rid of camera edge distortion
-	threshold: threshold for detection image shape 
-	threshold1: threshold for detection image shape
-	"""
+    """
+    This function trims the circular image by border pixels, nullifies outside borders
+    and crops the total img to the disk size
+    
+    parameters:
+    img: retina image to be processed
+    border: width of the border that will be trimmed from the disk. This allows to get 
+    rid of camera edge distortion
+    threshold: threshold for detection image shape 
+    threshold1: threshold for detection image shape
+    """
+    s = np.sum(img, axis=2)
+    cols = np.sum(s, axis=0) > threshold  
+    rows = np.sum(s, axis=1) > threshold
+
     height = rows.shape[0]
     width = cols.shape[0]
 
@@ -37,15 +41,19 @@ def circularcrop(img, border=200, threshold=20000, threshold1=100):
             center_y = math.sqrt( radius**2 - (upper_line_width/2)**2)
     radius1 = radius - border    
     
-    mask = np.zeros(img.shape)
+    mask = np.zeros(img.shape[0:2])
     rr, cc = circle(center_y, center_x, radius1, img.shape)
     mask[rr, cc] = 1
-    img *= mask
+    img[:,:,0] *= mask
+    img[:,:,1] *= mask
+    img[:,:,2] *= mask 
     
     x_borders = (center_x - radius1, img.shape[1] - center_x - radius1)
     y_borders = (max(center_y - radius1,0), max(img.shape[0] - center_y - radius1, 0))
 
-    imgT = util.crop(img, (y_borders, x_borders,  (0,0)))
-    maskT = util.crop(mask, (y_borders, x_borders,  (0,0)))
+    imgres = util.crop(img, (y_borders, x_borders,  (0,0)))
+    maskT = util.crop(mask, (y_borders, x_borders))
+
+    border_pixels = np.sum(1 - maskT)
     
-    return imgT, maskT, center_x, center_y, radius
+    return imgres, maskT, center_x, center_y, radius
