@@ -21,8 +21,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Features\edges.py" />
-    <Compile Include="Features\extract_1dlbp_images_features.py" />
+    <Compile Include="Features\pick_files_of_class.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Features\train_files.py" />
     <Compile Include="Features\tr_utils.py" />
     <Compile Include="Learning\environment.py">
@@ -35,11 +36,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Learning\SupervisedLearning.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Features\Crop on IPython Cluster.ipynb" />
-    <Content Include="Features\Cropping.ipynb" />
-    <Content Include="Features\Resizing.ipynb" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Learning\" />
