@@ -16,7 +16,6 @@ def get_sample_csv(sample_size = 0.1):
 
     tf.dump_to_csv(sample_file, X, Y)
 
-
 def get_sample_of_class(classs, labels, input_path, num = -1):
     """
     Returns images sampled from files by class
