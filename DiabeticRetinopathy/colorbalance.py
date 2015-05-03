@@ -3,35 +3,28 @@ import skimage
 from skimage import io, util
 import numpy as np
 
-def cbalance(img, s1, s2):
-    
-    img_f = img.flatten()
-    h, bins = np.histogram(img_f,bins=256,range=(0,255))
+def cbalance(img, mask, s1, s2):
+    h, bins = np.histogram(img,bins=256,range=(0,255))
+    h[0] -= np.sum(1 - mask) # compensate for the borders
     histo = np.cumsum(h)    
-    N = len(img_f)
+    N = img.shape[0] * img.shape[1]    
     
-    vmin = 0
-    while histo[vmin + 1] <= N * s1 / 100:
-        vmin = vmin + 1
-    vmax = 255 - 1
-    while histo[vmax - 1] > N * (1 - s2 / 100):
-        vmax = vmax - 1
-    if vmax < 255 - 1:
-        vmax = vmax + 1
-        
+    vmin = np.argmin(histo <= N * s1 / 100)
+    vmax = np.argmax(histo > N * (1. - s2 / 100))
+    vmax = 255 if vmax== 0 else vmax
+
     scale = 255. / (vmax - vmin)
 
-    img_f = np.maximum(img_f, vmin) # saturate values smaller than the minimal
-    img_f = np.minimum(img_f, vmax) # saturater values larger than vmax
-    img_f = (img_f - vmin) * scale
-    img_f = np.array(img_f, dtype=int)
-    return np.reshape(img_f, img.shape)
-
-def colorbalance(img,s1, s2):
-    img1 = np.zeros(img.shape)
-
-    img1[:,:,0] = cbalance(img[:,:,0], 1, 1)
-    img1[:,:,1] = cbalance(img[:,:,1], 1, 1)
-    img1[:,:,2] = cbalance(img[:,:,2], 1, 1)
+    img = np.maximum(img, vmin) # saturate values smaller than the minimal
+    img = np.minimum(img, vmax) # saturater values larger than vmax
+    img = (img - vmin) * scale
+    img = np.array(img, dtype=np.uint8)
     
-    return img1
+    return img
+
+def colorbalance(img, mask, s1, s2):
+    ared = cbalance(np.array(img[:,:,0]), mask, s1, s2)
+    agreen = cbalance(np.array(img[:,:,1]), mask, s1, s2)
+    ablue = cbalance(np.array(img[:,:,2]), mask, s1, s2)
+    
+    return np.dstack((ared, agreen, ablue ))
