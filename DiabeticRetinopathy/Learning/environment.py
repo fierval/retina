@@ -16,4 +16,7 @@ inp_file = path.join(train_path, "1dlbp.csv")
 sample_file = path.join(train_path, "1dlbp_sample.csv")
 labels_file = path.join(root_path, "trainLabels.csv")
 
-
+# Dropbox
+dropbox_root = '/users/boris/Dropbox/Kaggle/retina'
+dropbox_shared = '/users/boris/Dropbox/Shared/Retina'
+dropbox_train = path.join(dropbox_root, 'train')
