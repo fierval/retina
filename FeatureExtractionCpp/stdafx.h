@@ -7,9 +7,14 @@
 
 #include "targetver.h"
 
-#include <stdio.h>
-#include <tchar.h>
+#include <cstdlib>
+#include <iostream>
+#include <string>
 
+#include <opencv2/core/core.hpp>      // Basic OpenCV structures
+#include <opencv2/imgproc/imgproc.hpp>// Image processing methods for the CPU
+#include <opencv2/highgui/highgui.hpp>// Read images
+#include <opencv2/gpu/gpu.hpp>        // GPU structures and methods
 
-
-// TODO: reference additional headers your program requires here
+using namespace cv;
+using namespace std;
