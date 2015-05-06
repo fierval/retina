@@ -24,8 +24,14 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FindHaemorages.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="FindHaemorages.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HaemoragingImage.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Stopwatch.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -37,6 +43,9 @@
     </ClCompile>
     <ClCompile Include="FindHaemorages.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TransformImage.hpp">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
