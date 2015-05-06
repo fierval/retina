@@ -4,5 +4,10 @@
 class HaemoragingImage : public TransformImage
 {
 public:
-    HaemoragingImage(Mat& image) : TransformImage(image, Channels::RED) {}
+    virtual gpu::GpuMat& PreprocessImage()
+    {
+       return TransformImage::PreprocessImage();
+    }
+
+    HaemoragingImage(Mat& image) : TransformImage(image, Channels::GRAY) {}
 };

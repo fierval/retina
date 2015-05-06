@@ -30,12 +30,19 @@ protected:
 
 public:
     // in case we want a different kind of image reduction, e.g.: gray scale - override
-    virtual gpu::GpuMat& GetOneChannelImage(int channel)
+    gpu::GpuMat& GetOneChannelImage(Channels channel)
     {
-        assert(channel >= 0 && channel <= 2);
-        gpu::GpuMat g_split[3];
-        gpu::split(g_image, g_split);
-        g_split[channel].copyTo(g_oneChannel);
+        if ((int) channel <= 2)
+        {
+            gpu::GpuMat g_split[3];
+            gpu::split(g_image, g_split);
+            g_split[(int) channel].copyTo(g_oneChannel);
+        }
+        else
+        {
+            gpu::cvtColor(g_image, g_oneChannel, COLOR_BGR2GRAY);
+        }
+
         return g_oneChannel;
     }
 
@@ -49,8 +56,7 @@ public:
     TransformImage(Mat image, Channels selectChannel) : _image(image), _channel(selectChannel)
     {
         g_image.upload(image);
-        GetOneChannelImage((int) _channel);
-        PreprocessImage();
+        GetOneChannelImage(_channel);
     }
 
     vector<vector<Point>>& FindBlobContours(int thresh)
@@ -77,19 +83,57 @@ public:
     void DisplayEnhanced()
     {
         Mat enhanced;
-
-        vector<gpu::GpuMat> g_zeros(3);
-        g_zeros[0].upload(Mat::zeros(_image.rows, _image.cols, CV_8UC1));
-        g_zeros[0].copyTo(g_zeros[1]);
-        g_enhanced.copyTo(g_zeros[2]);
-
         gpu::GpuMat g_enhanced_show;
 
-        gpu::merge(g_zeros, g_enhanced_show);
+        if (_channel != Channels::GRAY)
+        {
+            int channel = (int)_channel;
+
+            vector<gpu::GpuMat> g_zeros(3);
+            for (int i = 0; i < 3; i++)
+            {   
+                if (i == channel)
+                {
+                    g_enhanced.copyTo(g_zeros[i]);
+                }
+                else
+                {
+                    g_zeros[0].upload(Mat::zeros(_image.rows, _image.cols, CV_8UC1));
+                }
+                
+            }
+            gpu::merge(g_zeros, g_enhanced_show);
+        }
+        else
+        {
+            g_enhanced_show = g_enhanced;
+        }
 
         g_enhanced_show.download(enhanced);
         namedWindow("Enhanced", WINDOW_NORMAL);
         imshow("Enhanced", enhanced);
+    }
+
+    gpu::GpuMat& AdaptiveThreshold(int blockSize, double param)
+    {
+        Mat image, out;
+        g_enhanced.download(image);
+        adaptiveThreshold(image, out, 127, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, blockSize, param);
+        g_enhanced.upload(out);
+
+        return g_enhanced;
+
+    }
+
+    gpu::GpuMat& OtsuThreshold()
+    {
+        //gpu::threshold(g_enhanced, g_enhanced, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+        Mat image, out;
+        g_enhanced.download(image);
+        cv::threshold(image, out, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+        g_enhanced.upload(out);
+
+        return g_enhanced;
     }
    
 };

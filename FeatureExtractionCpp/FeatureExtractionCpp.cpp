@@ -40,6 +40,8 @@ int main(int argc, char** argv)
     CommandLineParser parser(argc, argv, keys);
     string file_name = parser.get<string>("1");
 
+    gpu::printCudaDeviceInfo(0);
+
     src = imread(file_name, IMREAD_COLOR);
     vector<vector<Point>> contours;
 

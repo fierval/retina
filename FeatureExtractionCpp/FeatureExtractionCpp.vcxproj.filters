@@ -24,9 +24,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FindHaemorages.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="HaemoragingImage.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
