@@ -26,12 +26,20 @@ void thresh_callback(int, void *)
     src.copyTo(img);
     /// Draw contours
     int idx = 0;
-    for (; idx >= 0; idx = hierarchy[idx][0])
+    if (hierarchy.size() == 0)
     {
         Scalar color = Scalar(255, 255, 255);
-        drawContours(img, contours, idx, color, 5, 8, hierarchy);
-    }
+        drawContours(img, contours, idx, color, 5, 8, noArray());
 
+    }
+    else
+    {
+        for (; idx >= 0; idx = hierarchy[idx][0])
+        {
+            Scalar color = Scalar(255, 255, 255);
+            drawContours(img, contours, idx, color, 5, 8, hierarchy);
+        }
+    }
     /// Show in a window
     imshow(sourceWindow, img);
 }
