@@ -2,11 +2,14 @@
 
 #include "HaemoragingImage.hpp"
 
-vector<vector<Point>>& FindHaemorages(Mat& image, ParamBag& params)
+vector<vector<Point>>& FindHaemorages(unique_ptr<HaemoragingImage>& haemorage, Mat& image, ParamBag& params)
 {
-    HaemoragingImage haemorage(image);
-    haemorage.PreprocessImage();
-    haemorage.DisplayEnhanced();
+    haemorage->setImage(image);
+    haemorage->setChannel(Channels::GRAY);
+    haemorage->GetOneChannelImage(Channels::GRAY);
 
-    return haemorage.FindBlobContours(params.cannyThresh);
+    haemorage->PreprocessImage();
+    haemorage->DisplayEnhanced();
+
+    return haemorage->FindBlobContours(params.cannyThresh);
 }

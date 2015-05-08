@@ -9,29 +9,15 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DiabeticRetinopathy", "Diab
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|x64 = Debug|x64
-		Release|Any CPU = Release|Any CPU
-		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Debug|x64.ActiveCfg = Debug|x64
 		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Debug|x64.Build.0 = Debug|x64
-		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Release|Any CPU.ActiveCfg = Release|Win32
-		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Release|x64.ActiveCfg = Release|x64
 		{6A090BF0-F717-4AAC-8195-C6127405A72E}.Release|x64.Build.0 = Release|x64
-		{848A3024-25D2-483F-9116-AD78BDD8A838}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{848A3024-25D2-483F-9116-AD78BDD8A838}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{848A3024-25D2-483F-9116-AD78BDD8A838}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{848A3024-25D2-483F-9116-AD78BDD8A838}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{848A3024-25D2-483F-9116-AD78BDD8A838}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{848A3024-25D2-483F-9116-AD78BDD8A838}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution

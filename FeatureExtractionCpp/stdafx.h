@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include <opencv2/core/core.hpp>      // Basic OpenCV structures
 #include <opencv2/imgproc/imgproc.hpp>// Image processing methods for the CPU

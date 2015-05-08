@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>848a3024-25d2-483f-9116-ad78bdd8a838</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Features\edges.py</StartupFile>
+    <StartupFile>Features\opencv_feats.py</StartupFile>
     <SearchPath>Features\;Learning\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -21,6 +21,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Features\opencv_feats.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Features\pick_files_of_class.py">
       <SubType>Code</SubType>
     </Compile>

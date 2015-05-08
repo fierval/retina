@@ -25,7 +25,6 @@ protected:
     Channels _channel;
     vector<Vec4i> _hierarchy;
 
-
     vector<vector<Point>> _contours;
 
 public:
@@ -59,6 +58,8 @@ public:
         GetOneChannelImage(_channel);
     }
 
+    TransformImage() {}
+
     vector<vector<Point>>& FindBlobContours(int thresh)
     {
         gpu::GpuMat g_edges;
@@ -66,7 +67,7 @@ public:
         Mat edges;
         g_edges.download(edges);
 
-        findContours(edges, _contours, _hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+        findContours(edges, _contours, _hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
         return _contours;
     }
 
@@ -135,5 +136,8 @@ public:
 
         return g_enhanced;
     }
-   
+    
+    void setImage(Mat& image) { _image = image; g_image.upload(image); }
+    void setChannel(Channels channel) { _channel = channel; }
+    vector<Vec4i>& getHierarchy() { return _hierarchy; }
 };

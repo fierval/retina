@@ -10,4 +10,5 @@ public:
     }
 
     HaemoragingImage(Mat& image) : TransformImage(image, Channels::GRAY) {}
+    HaemoragingImage() : TransformImage() {}
 };

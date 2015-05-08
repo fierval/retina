@@ -1,8 +1,7 @@
 // FeatureExtractionCpp.cpp : Defines the entry point for the console application.
 //
-
 #include "stdafx.h"
-#include "TransformImage.hpp"
+#include "HaemoragingImage.hpp"
 
 const char* keys =
 {
@@ -14,21 +13,23 @@ RNG rng(12345);
 string sourceWindow("Source");
 
 ParamBag params;
+unique_ptr<HaemoragingImage> haemorage(new HaemoragingImage);
 
-vector<vector<Point>>& FindHaemorages(Mat&, ParamBag&);
+vector<vector<Point>>& FindHaemorages(unique_ptr<HaemoragingImage>&, Mat&, ParamBag&);
 
 void thresh_callback(int, void *)
 {
-    vector<Vec4i> hierarchy;
+    vector<vector<Point>>& contours = FindHaemorages(haemorage, src, params);
+    vector<Vec4i>& hierarchy = haemorage->getHierarchy();
 
-    vector<vector<Point>>& contours = FindHaemorages(src, params);
     Mat img;
     src.copyTo(img);
     /// Draw contours
-    for (size_t i = 0; i< contours.size(); i++)
+    int idx = 0;
+    for (; idx >= 0; idx = hierarchy[idx][0])
     {
-        Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
-        drawContours(img, contours, (int)i, color, 2, 8, hierarchy, 0, Point());
+        Scalar color = Scalar(255, 255, 255);
+        drawContours(img, contours, idx, color, 5, 8, hierarchy);
     }
 
     /// Show in a window
