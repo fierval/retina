@@ -48,7 +48,7 @@ public:
     // preprocessing may be different
     virtual gpu::GpuMat& PreprocessImage()
     {
-        gpu::GaussianBlur(g_oneChannel, g_enhanced, Size(3, 3), 30.);
+        gpu::GaussianBlur(g_oneChannel, g_enhanced, Size(5, 5), 30.);
         return g_enhanced;
     }
 
@@ -63,7 +63,7 @@ public:
     vector<vector<Point>>& FindBlobContours(int thresh)
     {
         gpu::GpuMat g_edges;
-        gpu::Canny(g_oneChannel, g_edges, thresh, thresh * 2);
+        gpu::Canny(g_enhanced, g_edges, thresh, thresh * 2);
         Mat edges;
         g_edges.download(edges);
 
