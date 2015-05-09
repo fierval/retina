@@ -19,6 +19,8 @@ class TransformImage
 {
 protected:
     Mat _image;
+    Mat _enhanced;
+
     gpu::GpuMat g_image;
     gpu::GpuMat g_oneChannel;
     gpu::GpuMat g_enhanced;
@@ -42,11 +44,28 @@ public:
             gpu::cvtColor(g_image, g_oneChannel, COLOR_BGR2GRAY);
         }
 
-        return g_oneChannel;
+        // in case we are not doing any further enhancements...
+        g_oneChannel.copyTo(g_enhanced);
+
+        return g_enhanced;
+    }
+
+    // apply Gaussian Pyramid scale times
+    gpu::GpuMat& PyramidDown(int scale = 1)
+    {
+        gpu::GpuMat buffer;
+        g_image.copyTo(buffer);
+
+        for (int i = scale; i > 0; i--, g_enhanced.copyTo(buffer))
+        {
+            gpu::pyrDown(buffer, g_enhanced);
+        }
+
+        return g_enhanced;
     }
 
     // preprocessing may be different
-    virtual gpu::GpuMat& PreprocessImage()
+    gpu::GpuMat& GaussBlur()
     {
         gpu::GaussianBlur(g_oneChannel, g_enhanced, Size(5, 5), 30.);
         return g_enhanced;
@@ -60,13 +79,17 @@ public:
 
     TransformImage() {}
 
-    vector<vector<Point>>& FindBlobContours(int thresh)
+    Mat& GetCannyEdges(int thresh, Mat& edges)
     {
         gpu::GpuMat g_edges;
         gpu::Canny(g_enhanced, g_edges, thresh, thresh * 2);
-        Mat edges;
-        g_edges.download(edges);
 
+        g_edges.download(edges);
+        return edges;
+    }
+
+    vector<vector<Point>>& FindBlobContours(Mat& edges)
+    {
         findContours(edges, _contours, _hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
         return _contours;
     }
@@ -136,8 +159,43 @@ public:
 
         return g_enhanced;
     }
-    
+
+    // slap contours onto an image
+    static void DrawContours(vector<vector<Point>>& contours, vector<Vec4i>& hierarchy, Mat& img, int thickness = CV_FILLED)
+    {
+        int idx = 0;
+        if (hierarchy.size() == 0)
+        {
+            for (idx = 0; idx < contours.size(); idx++)
+            {
+                Scalar color = Scalar(255, 255, 255);
+                drawContours(img, contours, idx, color, thickness, 8, noArray());
+            }
+
+        }
+        else
+        {
+            for (; idx >= 0; idx = hierarchy[idx][0])
+            {
+                Scalar color = Scalar(255, 255, 255);
+                drawContours(img, contours, idx, color, thickness, 8, hierarchy);
+            }
+        }
+    }
+
+    // Accessors
     void setImage(Mat& image) { _image = image; g_image.upload(image); }
     void setChannel(Channels channel) { _channel = channel; }
+    Mat& getEnhanced() { g_enhanced.download(_enhanced); return _enhanced; }
     vector<Vec4i>& getHierarchy() { return _hierarchy; }
+    vector<vector<Point>>& getContours() { return _contours; }
+
+    void setContours(vector<vector<Point>>& contours) 
+    { 
+        _contours.clear(); 
+        _hierarchy.clear();
+        _contours.resize(contours.size()); 
+        copy(contours.begin(), contours.end(), _contours.begin()); 
+    }
+
 };

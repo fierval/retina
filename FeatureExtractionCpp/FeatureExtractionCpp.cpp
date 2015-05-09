@@ -15,31 +15,17 @@ string sourceWindow("Source");
 ParamBag params;
 unique_ptr<HaemoragingImage> haemorage(new HaemoragingImage);
 
-vector<vector<Point>>& FindHaemorages(unique_ptr<HaemoragingImage>&, Mat&, ParamBag&);
+vector<vector<Point>> * FindHaemorages(unique_ptr<HaemoragingImage>&, Mat&, ParamBag&);
 
 void thresh_callback(int, void *)
 {
-    vector<vector<Point>>& contours = FindHaemorages(haemorage, src, params);
-    vector<Vec4i>& hierarchy = haemorage->getHierarchy();
+    unique_ptr<vector<vector<Point>>> contours(FindHaemorages(haemorage, src, params));
 
     Mat img;
     src.copyTo(img);
-    /// Draw contours
-    int idx = 0;
-    if (hierarchy.size() == 0)
-    {
-        Scalar color = Scalar(255, 255, 255);
-        drawContours(img, contours, idx, color, 5, 8, noArray());
+    TransformImage::DrawContours(*contours, vector<Vec4i>(), img);
 
-    }
-    else
-    {
-        for (; idx >= 0; idx = hierarchy[idx][0])
-        {
-            Scalar color = Scalar(255, 255, 255);
-            drawContours(img, contours, idx, color, 5, 8, hierarchy);
-        }
-    }
+    /// Draw contours
     /// Show in a window
     imshow(sourceWindow, img);
 }
@@ -52,12 +38,14 @@ int main(int argc, char** argv)
     gpu::printCudaDeviceInfo(0);
 
     src = imread(file_name, IMREAD_COLOR);
-    vector<vector<Point>> contours;
+    auto hi = HaemoragingImage(src);
+    hi.PyramidDown(2);
+    src = hi.getEnhanced();
 
-    params.cannyThresh = 100;
+    params.cannyThresh = 23;
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
-    createTrackbar("Track", sourceWindow, &(params.cannyThresh), params.cannyThresh * 2, thresh_callback);
+    createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
     thresh_callback(0, &(params.cannyThresh));
     waitKey(0);
     return(0);
