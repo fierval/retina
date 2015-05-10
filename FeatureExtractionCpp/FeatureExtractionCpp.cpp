@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     hi.PyramidDown(2);
     src = hi.getEnhanced();
 
-    params.cannyThresh = 23;
+    params.cannyThresh = 30;
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
     createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
