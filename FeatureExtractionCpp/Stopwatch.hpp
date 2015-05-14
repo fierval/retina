@@ -7,7 +7,7 @@ public:
     explicit Stopwatch(bool start_immediately = false);
     void Start(bool reset = false);
     void Stop();
-    double Elapsed() const;
+    long long Elapsed() const;
 
 private:
     chrono::time_point<std::chrono::system_clock> start, end;
@@ -40,7 +40,8 @@ void Stopwatch::Stop()
         running = false;
     }
 }
-double Stopwatch::Elapsed() const
+long long Stopwatch::Elapsed() const
 {
-    return ((running ? chrono::system_clock::now() : end) - start).count();
+    chrono::milliseconds elapsed(((running ? chrono::system_clock::now() : end) - start).count());
+    return elapsed.count();
 }

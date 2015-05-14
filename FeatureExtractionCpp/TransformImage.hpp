@@ -1,5 +1,5 @@
-#pragma once
 #include "stdafx.h"
+#pragma once
 
 typedef struct
 {
@@ -11,7 +11,10 @@ enum struct Channels
     BLUE = 0,
     GREEN = 1,
     RED = 2,
-    GRAY = 3
+    GRAY = 3,
+    H = 0,
+    S = 1,
+    V = 2
 };
 
 
@@ -22,32 +25,48 @@ protected:
     Mat _enhanced;
 
     gpu::GpuMat g_image;
-    gpu::GpuMat g_oneChannel;
+    gpu::GpuMat g_oneChannel[3];
     gpu::GpuMat g_enhanced;
+    gpu::GpuMat g_buf; //bufffer for different operations
     Channels _channel;
     vector<Vec4i> _hierarchy;
 
     vector<vector<Point>> _contours;
+    inline void MakeSafe() { g_enhanced.copyTo(g_buf); }
 
 public:
-    // in case we want a different kind of image reduction, e.g.: gray scale - override
-    gpu::GpuMat& GetOneChannelImage(Channels channel)
+    // Split into 3 channels (unless it's grey - then need to use another func)
+    // stores one of them in the "enhanced"
+    gpu::GpuMat& GetOneChannelImages(Channels channelEnhanced)
     {
-        if ((int) channel <= 2)
-        {
-            gpu::GpuMat g_split[3];
-            gpu::split(g_image, g_split);
-            g_split[(int) channel].copyTo(g_oneChannel);
-        }
-        else
-        {
-            gpu::cvtColor(g_image, g_oneChannel, COLOR_BGR2GRAY);
-        }
+        assert(channelEnhanced != Channels::GRAY);
 
-        // in case we are not doing any further enhancements...
-        g_oneChannel.copyTo(g_enhanced);
+        gpu::split(g_image, g_oneChannel);
+        g_oneChannel[(int) channelEnhanced].copyTo(g_enhanced);
+        _channel = channelEnhanced;
 
         return g_enhanced;
+    }
+
+    gpu::GpuMat& GetGrayChannelImage()
+    {
+        _channel = Channels::GRAY;
+        gpu::cvtColor(g_image, g_enhanced, COLOR_BGR2GRAY);
+        return g_enhanced;
+    }
+
+    void MakeHsv()
+    {
+        g_image.copyTo(g_buf);
+
+        gpu::cvtColor(g_buf, g_image, COLOR_BGR2HSV);
+    }
+
+    void MakeBGR()
+    {
+        g_image.copyTo(g_buf);
+
+        gpu::cvtColor(g_buf, g_image, COLOR_HSV2BGR);
     }
 
     // apply Gaussian Pyramid scale times
@@ -67,14 +86,16 @@ public:
     // preprocessing may be different
     gpu::GpuMat& GaussBlur()
     {
-        gpu::GaussianBlur(g_oneChannel, g_enhanced, Size(5, 5), 30.);
+        MakeSafe();
+
+        gpu::GaussianBlur(g_buf, g_enhanced, Size(5, 5), 30.);
         return g_enhanced;
     }
 
-    TransformImage(Mat image, Channels selectChannel) : _image(image), _channel(selectChannel)
+    // TODO: this is actually bad since it may throw
+    TransformImage(Mat image) : _image(image)
     {
         g_image.upload(image);
-        GetOneChannelImage(_channel);
     }
 
     TransformImage() {}
@@ -94,17 +115,28 @@ public:
         return _contours;
     }
 
+    gpu::GpuMat& GetHist(gpu::GpuMat& dest)
+    {
+        // for once use g_buf to avoid memory allocations
+        calcHist(g_enhanced, dest, g_buf);
+        return dest;
+    }
+
     gpu::GpuMat& ApplyClahe()
     {
+        MakeSafe();
+
         Ptr<gpu::CLAHE> clahe = gpu::createCLAHE();
 
         clahe->setClipLimit(4.);
         clahe->setTilesGridSize(Size(16, 16));
-        clahe->apply(g_oneChannel, g_enhanced);
+        clahe->apply(g_buf, g_enhanced);
         return g_enhanced;
     }
 
-    void DisplayEnhanced()
+    // display enhanced image. Do we need to merge all 3 channels to do it?
+    // if not, only the relevant channel will be isolated
+    void DisplayEnhanced(bool merge3 = false)
     {
         Mat enhanced;
         gpu::GpuMat g_enhanced_show;
@@ -112,8 +144,8 @@ public:
         if (_channel != Channels::GRAY)
         {
             int channel = (int)_channel;
-
             vector<gpu::GpuMat> g_zeros(3);
+
             for (int i = 0; i < 3; i++)
             {   
                 if (i == channel)
@@ -121,8 +153,15 @@ public:
                     g_enhanced.copyTo(g_zeros[i]);
                 }
                 else
-                {
-                    g_zeros[0].upload(Mat::zeros(_image.rows, _image.cols, CV_8UC1));
+                {   
+                    if (merge3)
+                    {
+                        g_oneChannel[i].copyTo(g_zeros[i]);
+                    }
+                    else
+                    {
+                        g_zeros[i].upload(Mat::zeros(_image.rows, _image.cols, CV_8UC1));
+                    }
                 }
                 
             }
@@ -184,9 +223,10 @@ public:
     }
 
     // Accessors
-    void setImage(Mat& image) { _image = image; g_image.upload(image); }
+    void setImage(Mat& image) {image.copyTo(_image); g_image.upload(image); }
     void setChannel(Channels channel) { _channel = channel; }
     Mat& getEnhanced() { g_enhanced.download(_enhanced); return _enhanced; }
+    void getChannelImage(Channels channel, Mat& dst) { g_oneChannel[(int)channel].download(dst); }
     vector<Vec4i>& getHierarchy() { return _hierarchy; }
     vector<vector<Point>>& getContours() { return _contours; }
 
