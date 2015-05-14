@@ -1,5 +1,5 @@
-#include "stdafx.h"
 #pragma once
+#include "stdafx.h"
 
 typedef struct
 {
@@ -225,6 +225,7 @@ public:
 
     // Accessors
     void setImage(Mat& image) {image.copyTo(_image); g_image.upload(image); }
+    Mat& getImage() { return _image; }
     void setChannel(Channels channel) { _channel = channel; }
     Mat& getEnhanced() { g_enhanced.download(_enhanced); return _enhanced; }
     void getChannelImage(Channels channel, Mat& dst) { g_oneChannel[(int)channel].download(dst); }

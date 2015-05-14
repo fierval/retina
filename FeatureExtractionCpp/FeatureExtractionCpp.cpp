@@ -1,9 +1,10 @@
 // FeatureExtractionCpp.cpp : Defines the entry point for the console application.
 //
-
 #include "stdafx.h"
+
 #include "HaemoragingImage.hpp"
 #include "HistogramNormalize.hpp"
+
 
 const char* keys =
 {
@@ -52,9 +53,11 @@ int main(int argc, char** argv)
     reference = ref_image.getEnhanced();
 
     auto histSpec = HistogramNormalize(reference);
-    Mat dest;
+    Mat dest, dest3channels;
 
-    histSpec.HistogramSpecification(reference, dest, Channels::ALL);
+    histSpec.HistogramSpecification(src, dest, Channels::ALL);
+    dest.convertTo(dest3channels, CV_8UC3);
+
     params.cannyThresh = 30;
 
     //namedWindow(sourceWindow, WINDOW_NORMAL);

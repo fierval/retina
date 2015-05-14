@@ -1,6 +1,7 @@
-#pragma once
+#include "stdafx.h"
 #include "TransformImage.hpp"
 
+#pragma once
 #pragma warning(disable: 4244)
 const Channels default_channels[3] = { Channels::H, Channels::S, Channels::V };
 
@@ -43,14 +44,7 @@ private:
         }
 
     }
-public:
-    HistogramNormalize(Mat refImage) : _refImage(refImage), channels(default_channels, default_channels + 3)
-    { 
-        
-    }
 
-    // calculate the histogram for the entire image
-    // with "flattened" values of the 3 channels
     void CalcChannelHist(Mat& img, Mat& hist, int normConst = 0xFF)
     {
         Mat buf;
@@ -63,23 +57,24 @@ public:
             buf = img;
         }
 
-        float ranges[] = { 0, normConst };
+        float ranges[] = { 0, normConst + 1 };
         const float* pranges[] = { ranges };
-        int bins =  normConst + 1;
+        int bins = normConst + 1;
         int histSize[] = { bins };
         int channels[] = { 0 };
 
-        calcHist(&buf, 1, channels, Mat(), hist, 1, histSize, pranges);
+        Mat dest;
+        calcHist(&buf, 1, channels, Mat(), dest, 1, histSize, pranges);
+        transpose(dest, hist);
     }
 
     void CalcHist(TransformImage& ti, Mat& hist, Channels channel)
     {
-        Mat buf;
         int normConst = channel == Channels::ALL ? 0xFFFFFF : 0xFF;
-
+        Mat buf(1, normConst, CV_32SC1);
         if (channel == Channels::ALL)
         {
-            CalcChannelHist(ti.getEnhanced(), buf);
+            CalcChannelHist(ti.getImage(), buf, normConst);
         }
         else
         {
@@ -92,8 +87,25 @@ public:
             gbuf.download(buf);
         }
 
-        integral(buf, hist);
-        normalize(hist, hist, 0., 255., NORM_MINMAX);
+        Mat image;
+        if (channel == Channels::ALL)
+        {
+            image = ti.getImage();
+        }
+        else
+        {
+            ti.getChannelImage(channel, image);
+        }
+
+        Mat cumsum(Mat::zeros(buf.size(), CV_32SC1));
+        float normalization = (float)normConst / (image.rows * image.cols);
+        cumsum.at<float>(0, 0) = (long)buf.at<float>(0, 0) * normalization;
+
+        for (int i = 1; i < buf.cols; i++)
+        {
+            cumsum.at<float>(0, i) = cumsum.at<float>(0, i - 1) + buf.at<float>(0, i) * normalization;
+        }
+
     }
 
     // map inpHist to refHist (in img and ref):
@@ -118,6 +130,15 @@ public:
         }
     }
 
+public:
+    HistogramNormalize(Mat refImage) : _refImage(refImage), channels(default_channels, default_channels + 3)
+    { 
+        
+    }
+
+    // calculate the histogram for the entire image
+    // with "flattened" values of the 3 channels
+ 
     // Algorithm described here:
     // http://fourier.eng.hmc.edu/e161/lectures/contrast_transform/node3.html
     // if freq is true, ignore channel
