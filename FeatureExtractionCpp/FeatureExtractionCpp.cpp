@@ -2,13 +2,16 @@
 //
 #include "stdafx.h"
 #include "HaemoragingImage.hpp"
+#include "HistogramNormalize.hpp"
 
 const char* keys =
 {
-    "{1||| must specify image name}"
+    "{1||| must specify reference image name}"
+    "{2||| must specify image name}"
+
 };
 
-Mat src, src_gray;
+Mat src, src_gray, reference;
 RNG rng(12345);
 string sourceWindow("Source");
 
@@ -33,7 +36,8 @@ void thresh_callback(int, void *)
 int main(int argc, char** argv)
 {
     CommandLineParser parser(argc, argv, keys);
-    string file_name = parser.get<string>("1");
+    string ref_file_name = parser.get<string>("1");
+    string file_name = parser.get<string>("2");
 
     gpu::printCudaDeviceInfo(0);
 
@@ -42,11 +46,31 @@ int main(int argc, char** argv)
     hi.PyramidDown(2);
     src = hi.getEnhanced();
 
+    auto ref_image = HaemoragingImage(imread(ref_file_name, IMREAD_COLOR));
+    ref_image.PyramidDown(2);
+    reference = ref_image.getEnhanced();
+
+    auto histSpec = HistogramNormalize(reference);
+    vector<Channels> channels(3);
+    channels.push_back(Channels::RED);
+    channels.push_back(Channels::GREEN);
+    channels.push_back(Channels::BLUE);
+
+    for (auto ch : channels)
+    {
+        Mat img;
+        histSpec.HistogramSpecification(src, img, ch);
+        ref_image.setChannelImage(ch, img);
+    }
+
     params.cannyThresh = 30;
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
-    createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
-    thresh_callback(0, &(params.cannyThresh));
+
+    //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
+    //thresh_callback(0, &(params.cannyThresh));
+    imshow(sourceWindow, reference);
+    ref_image.DisplayEnhanced(true);
     waitKey(0);
     return(0);
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include "TransformImage.hpp"
 
+const Channels default_channels[3] = { Channels::H, Channels::S, Channels::V };
+
 // histogram specification & equalization for color images
 class HistogramNormalize
 {
@@ -9,29 +11,29 @@ private:
     TransformImage _refImage;
     gpu::GpuMat g_hist;
     Mat _refHist;
-    const Channels channels[3] = { Channels::H, Channels::S, Channels::V };
+    const vector<Channels> channels;
     bool _hasCalcedHist = false;
 
-    void CalcRefHistogram()
+    void CalcRefHistogram(Channels channel)
     {
         if (_hasCalcedHist)
         {
             return;
         }
 
-        CalcIntensityHist(_refImage, _refHist);
+        CalcHist(_refImage, _refHist, channel);
         _hasCalcedHist = true;
     }
 
 public:
-    HistogramNormalize(Mat refImage) : _refImage(refImage)  
+    HistogramNormalize(Mat refImage) : _refImage(refImage), channels(default_channels, default_channels + 3)
     { 
+        
     }
 
-    void CalcIntensityHist(TransformImage& ti, Mat& hist)
+    void CalcHist(TransformImage& ti, Mat& hist, Channels channel)
     {
-        ti.MakeHsv();
-        ti.GetOneChannelImages(Channels::V);
+        ti.GetOneChannelImages(channel);
         gpu::GpuMat gbuf;
         Mat buf;
 
@@ -67,22 +69,33 @@ public:
 
     // Algorithm described here:
     // http://fourier.eng.hmc.edu/e161/lectures/contrast_transform/node3.html
-    void HistogramSpecification(Mat& image)
+    void HistogramSpecification(Mat& image, Mat& dest, Channels channel)
     {
         //1. Get the reference image histogram (cumulative, normalized)
-        CalcRefHistogram();
+        CalcRefHistogram(channel);
 
         TransformImage ti(image);
         Mat hist;
 
         //2. Get the input image histogram
-        CalcIntensityHist(ti, hist);
+        CalcHist(ti, hist, channel);
         Mat mapping;
         
         //3. Create the mapping
         CreateHistMap(_refHist, hist, mapping);
 
-        //TODO: 4 actually map the pixels
+        //4 actually map the pixels
+        dest = Mat::zeros(image.rows, image.cols, CV_8UC1);
+        Mat oneChannel;
+        ti.GetOneChannelImages(channel).download(oneChannel);
+
+        for (int i = 0; i < image.rows; i++)
+        {
+            for (int j = 0; j < image.cols; j++)
+            {
+                dest.at<uchar>(i, j) = hist.at<uchar>(0, image.at<uchar>(i, j));
+            }
+        }
     }
 
 };

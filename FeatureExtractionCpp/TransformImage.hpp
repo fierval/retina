@@ -227,6 +227,8 @@ public:
     void setChannel(Channels channel) { _channel = channel; }
     Mat& getEnhanced() { g_enhanced.download(_enhanced); return _enhanced; }
     void getChannelImage(Channels channel, Mat& dst) { g_oneChannel[(int)channel].download(dst); }
+    void setChannelImage(Channels channel, Mat& src) { g_oneChannel[(int)channel].upload(src); }
+
     vector<Vec4i>& getHierarchy() { return _hierarchy; }
     vector<vector<Point>>& getContours() { return _contours; }
 
