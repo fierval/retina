@@ -5,7 +5,7 @@ class HaemoragingImage : public TransformImage
 {
 public:
  
-    HaemoragingImage(Mat& image) : TransformImage(image, Channels::GRAY) {}
+    HaemoragingImage(Mat& image) : TransformImage(image) {}
     HaemoragingImage() : TransformImage() {}
 
     vector<vector<Point>>& FlattenContours()
