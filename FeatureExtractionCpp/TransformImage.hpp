@@ -14,7 +14,8 @@ enum struct Channels
     GRAY = 3,
     H = 0,
     S = 1,
-    V = 2
+    V = 2,
+    ALL = 4,
 };
 
 

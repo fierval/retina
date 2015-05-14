@@ -1,5 +1,6 @@
 // FeatureExtractionCpp.cpp : Defines the entry point for the console application.
 //
+
 #include "stdafx.h"
 #include "HaemoragingImage.hpp"
 #include "HistogramNormalize.hpp"
@@ -51,26 +52,17 @@ int main(int argc, char** argv)
     reference = ref_image.getEnhanced();
 
     auto histSpec = HistogramNormalize(reference);
-    vector<Channels> channels(3);
-    channels.push_back(Channels::RED);
-    channels.push_back(Channels::GREEN);
-    channels.push_back(Channels::BLUE);
+    Mat dest;
 
-    for (auto ch : channels)
-    {
-        Mat img;
-        histSpec.HistogramSpecification(src, img, ch);
-        ref_image.setChannelImage(ch, img);
-    }
-
+    histSpec.HistogramSpecification(reference, dest, Channels::ALL);
     params.cannyThresh = 30;
 
-    namedWindow(sourceWindow, WINDOW_NORMAL);
+    //namedWindow(sourceWindow, WINDOW_NORMAL);
 
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
     //thresh_callback(0, &(params.cannyThresh));
-    imshow(sourceWindow, reference);
-    ref_image.DisplayEnhanced(true);
+    //imshow(sourceWindow, reference);
+    //ref_image.DisplayEnhanced(true);
     waitKey(0);
     return(0);
 }
