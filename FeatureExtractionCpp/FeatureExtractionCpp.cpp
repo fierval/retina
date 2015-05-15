@@ -43,32 +43,25 @@ int main(int argc, char** argv)
 
     gpu::printCudaDeviceInfo(0);
 
-    src = imread(file_name, IMREAD_COLOR);
-    auto hi = HaemoragingImage(src);
-    hi.PyramidDown(2);
-    Mat srcInterm = hi.getEnhanced();
+    Mat rgb;
+    rgb = imread(file_name, IMREAD_COLOR);
 
-    auto ref_image = HaemoragingImage(imread(ref_file_name, IMREAD_COLOR));
-    ref_image.PyramidDown(2);
+    auto hi = HaemoragingImage(rgb);
+    hi.PyramidDown();
+    Mat src = hi.getEnhanced();
+    rgb = imread(ref_file_name, IMREAD_COLOR);
+
+    auto ref_image = HaemoragingImage(rgb);
+    ref_image.PyramidDown();
     reference = ref_image.getEnhanced();
 
-    Mat eqSizeRef;
-    resize(reference, eqSizeRef, Size(500, 500));
-    resize(srcInterm, src, Size(500, 500));
-
-    Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::GREEN };
+    Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::BLUE};
     vector<Channels> channels(_channels, _channels + 3);
 
-    auto histSpec = HistogramNormalize(eqSizeRef, channels);
+    auto histSpec = HistogramNormalize(reference, channels);
 
-    Mat blue, green, red;
-    Mat  bgr[3] = { blue, green, red };
     Mat dest;
-    histSpec.HistogramSpecification(src, bgr[0], Channels::BLUE);
-    histSpec.HistogramSpecification(src, bgr[1], Channels::GREEN);
-    histSpec.HistogramSpecification(src, bgr[2], Channels::RED);
-    merge(bgr, 3, dest);
-
+    histSpec.HistogramSpecification(src, dest);
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
     imshow(sourceWindow, dest);

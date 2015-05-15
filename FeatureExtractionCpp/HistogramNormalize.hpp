@@ -18,7 +18,7 @@ private:
     bool _hasCalcedHist = false;
     bool _hasCalcedFreqHist = false;
 
-    void CalcRefHistogram(Channels channel)
+    void CalcRefHistogram()
     {
         if (_hasCalcedHist)
         {
@@ -27,7 +27,7 @@ private:
 
         for (Channels ch : _channels)
         {
-            CalcHist(_refImage, _refHist[(int)ch], channel);
+            CalcHist(_refImage, _refHist[(int)ch], ch);
         }
         _hasCalcedHist = true;
     }
@@ -36,15 +36,16 @@ private:
     {
         vector<uchar> mappingV;
         mapping.copyTo(mappingV);
-
+        
+        // using the vector is quicker than accessing a matrix
         for (int i = 0; i < image.rows; i++)
         {
+            int row = i * image.cols;
             for (int j = 0; j < image.cols; j++)
             {
-                dest.at<uchar>(i, j) = mappingV[image.at<uchar>(i, j)];
+                dest.at<uchar>(i,j) = mappingV[image.at<uchar>(i, j)];
             }
         }
-
     }
 
     void CalcHist(TransformImage& ti, Mat& hist, Channels channel)
@@ -79,10 +80,10 @@ private:
             return;
         }
 
-        float normalization = (float)normConst / total;
+        float normalization = (float)normConst / (total - bufV[i]);
         int sum = 0;
 
-        for (i; i < buf.cols; i++)
+        for (i++; i < buf.cols; i++)
         {
             sum += bufV[i];
             cumsumV[i] = saturate_cast<uchar>(sum * normalization);
@@ -96,7 +97,6 @@ private:
     // |img[i] - ref[j]| = min(k) |img[i] - ref[k]|
     void CreateHistMap(Mat& ref, Mat& img, Mat& dst)
     {
-        dst = Mat::zeros(ref.size(), CV_8UC1);
         vector<uchar> histSource;
         vector<uchar> histRef;
         vector<uchar> map(ref.cols, 0);
@@ -113,10 +113,13 @@ private:
                 if (diff < curMin)
                 {
                     curMin = diff;
-                    dst.at<uchar>(0, i) = (uchar)j;
+                    map[i] = (uchar)j;
                 }
             }
         }
+
+        Mat res(map);
+        transpose(res, dst);
     }
 
 public:
@@ -134,7 +137,7 @@ public:
     void HistogramSpecification(Mat& image, Mat& dest, Channels channel)
     {
         //1. Get the reference image histogram (cumulative, normalized)
-        CalcRefHistogram(channel);
+        CalcRefHistogram();
 
         TransformImage ti(image);
         Mat hist;
@@ -153,5 +156,17 @@ public:
 
         ImageMap(im, dest, mapping);
 
+    }
+
+    void HistogramSpecification(Mat& image, Mat& dest)
+    {
+        Mat chImg[3] = { Mat(), Mat(), Mat() };
+        for (Channels channel : _channels)
+        {
+            int i = (int)channel;
+            HistogramSpecification(image, chImg[i], channel);
+        }
+
+        merge(chImg, 3, dest);
     }
 };
