@@ -16,6 +16,8 @@ const char* keys =
 Mat src, src_gray, reference;
 RNG rng(12345);
 string sourceWindow("Source");
+string targetWindow("Target");
+string transformedWindow("Transformed");
 
 ParamBag params;
 unique_ptr<HaemoragingImage> haemorage(new HaemoragingImage);
@@ -48,7 +50,8 @@ int main(int argc, char** argv)
 
     auto hi = HaemoragingImage(rgb);
     hi.PyramidDown();
-    Mat src = hi.getEnhanced();
+    src = hi.getEnhanced();
+    
     rgb = imread(ref_file_name, IMREAD_COLOR);
 
     auto ref_image = HaemoragingImage(rgb);
@@ -64,10 +67,14 @@ int main(int argc, char** argv)
     histSpec.HistogramSpecification(src, dest);
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
-    imshow(sourceWindow, dest);
+    namedWindow(targetWindow, WINDOW_NORMAL);
+    namedWindow(transformedWindow, WINDOW_NORMAL);
+
+    imshow(sourceWindow, reference);
+    imshow(targetWindow, src);
+    imshow(transformedWindow, dest);
 
     //params.cannyThresh = 30;
-
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
     //thresh_callback(0, &(params.cannyThresh));
     //ref_image.DisplayEnhanced(true);
