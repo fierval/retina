@@ -22,7 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Features\map_colors.py" />
+    <Compile Include="Features\map_normalize_colors.py" />
     <Compile Include="Features\opencv_feats.py">
       <SubType>Code</SubType>
     </Compile>
@@ -45,9 +45,6 @@
   <ItemGroup>
     <Folder Include="Learning\" />
     <Folder Include="Features\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Features\Extract Blobs Corners.ipynb" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
