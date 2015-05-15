@@ -1,6 +1,5 @@
-#pragma once
-#include "stdafx.h"
 #include "TransformImage.hpp"
+#pragma once
 
 #pragma warning(disable: 4244)
 const Channels default_channels[3] = { Channels::H, Channels::S, Channels::V };
@@ -31,12 +30,14 @@ private:
 
     void ImageMap(Mat& image, Mat& dest, Mat& mapping)
     {
+        vector<uchar> mappingV;
+        mapping.copyTo(mappingV);
 
         for (int i = 0; i < image.rows; i++)
         {
             for (int j = 0; j < image.cols; j++)
             {
-                dest.at<uchar>(i, j) = mapping.at<uchar>(0, image.at<T>(i, j));
+                dest.at<uchar>(i, j) = mappingV[image.at<uchar>(i, j)];
             }
         }
 
@@ -57,21 +58,34 @@ private:
         Mat image;
         ti.getChannelImage(channel, image);
 
-        Mat cumsum(Mat::zeros(buf.size(), CV_32SC1));
-        vector<float> cumsumV, bufV;
+        Mat cumsum(Mat::zeros(buf.size(), CV_8UC1));
+        vector<uchar> cumsumV;
+        vector<float> bufV;
+
         cumsum.copyTo(cumsumV);
         buf.copyTo(bufV);
 
-        float normalization = (float)normConst / (image.rows * image.cols);
-        cumsumV[0] = bufV[0] * normalization;
+        int i = 0;
+        while (!bufV[i]) ++i;
 
-        for (int i = 1; i < buf.cols; i++)
+        int total = (int)image.total();
+        if (bufV[i] == total)
         {
-            cumsumV[i] = cumsumV[i - 1] + bufV[i] * normalization;
+            hist.setTo(i);
+            return;
         }
-        Mat res(cumsumV);
 
-        res.copyTo(hist);
+        float normalization = (float)normConst / total;
+        int sum = 0;
+
+        for (i; i < buf.cols; i++)
+        {
+            sum += bufV[i];
+            cumsumV[i] = saturate_cast<uchar>(sum * normalization);
+        }
+
+        Mat res(cumsumV);
+        transpose(res, hist);
     }
 
     // map inpHist to refHist (in img and ref):
@@ -79,14 +93,16 @@ private:
     void CreateHistMap(Mat& ref, Mat& img, Mat& dst)
     {
         dst = Mat::zeros(ref.size(), CV_8UC1);
-        vector<float> histSource;
-        vector<float> histRef;
+        vector<uchar> histSource;
+        vector<uchar> histRef;
+        vector<uchar> map(ref.cols, 0);
+
         ref.copyTo(histRef);
         img.copyTo(histSource);
 
         for (int i = 0; i < img.cols; i++)
         {
-            float curMin = std::abs(histSource[0] - histRef[0]);
+            uchar curMin = std::abs(histSource[i] - histRef[0]);
             for (int j = 1; j < ref.cols; j++)
             {
                 int diff = std::abs(histSource[i] - histRef[j]);
@@ -128,8 +144,10 @@ public:
 
         //4 actually map the pixels
         dest = Mat::zeros(image.rows, image.cols, CV_8UC1);
+        Mat im;
+        ti.getChannelImage(channel, im);
 
-        ImageMap(image, dest, mapping);
+        ImageMap(im, dest, mapping);
 
     }
 };

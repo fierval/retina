@@ -1,5 +1,5 @@
-#pragma once
 #include "stdafx.h"
+#pragma once
 
 typedef struct
 {

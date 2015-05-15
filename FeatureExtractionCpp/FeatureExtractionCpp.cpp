@@ -46,25 +46,34 @@ int main(int argc, char** argv)
     src = imread(file_name, IMREAD_COLOR);
     auto hi = HaemoragingImage(src);
     hi.PyramidDown(2);
-    src = hi.getEnhanced();
+    Mat srcInterm = hi.getEnhanced();
 
     auto ref_image = HaemoragingImage(imread(ref_file_name, IMREAD_COLOR));
     ref_image.PyramidDown(2);
     reference = ref_image.getEnhanced();
 
-    auto histSpec = HistogramNormalize(reference);
-    Mat dest, dest3channels;
+    Mat eqSizeRef;
+    resize(reference, eqSizeRef, Size(500, 500));
+    resize(srcInterm, src, Size(500, 500));
 
-    histSpec.HistogramSpecification(src, dest, Channels::ALL);
-    dest.convertTo(dest3channels, CV_8UC3);
+    auto histSpec = HistogramNormalize(eqSizeRef);
 
-    params.cannyThresh = 30;
+    Mat blue, green, red;
+    Mat  bgr[3] = { blue, green, red };
+    Mat dest;
+    histSpec.HistogramSpecification(src, bgr[0], Channels::BLUE);
+    histSpec.HistogramSpecification(src, bgr[1], Channels::GREEN);
+    histSpec.HistogramSpecification(src, bgr[2], Channels::RED);
+    merge(bgr, 3, dest);
 
-    //namedWindow(sourceWindow, WINDOW_NORMAL);
+
+    namedWindow(sourceWindow, WINDOW_NORMAL);
+    imshow(sourceWindow, dest);
+
+    //params.cannyThresh = 30;
 
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
     //thresh_callback(0, &(params.cannyThresh));
-    //imshow(sourceWindow, reference);
     //ref_image.DisplayEnhanced(true);
     waitKey(0);
     return(0);
