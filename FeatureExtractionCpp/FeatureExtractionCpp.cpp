@@ -56,7 +56,10 @@ int main(int argc, char** argv)
     resize(reference, eqSizeRef, Size(500, 500));
     resize(srcInterm, src, Size(500, 500));
 
-    auto histSpec = HistogramNormalize(eqSizeRef);
+    Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::GREEN };
+    vector<Channels> channels(_channels, _channels + 3);
+
+    auto histSpec = HistogramNormalize(eqSizeRef, channels);
 
     Mat blue, green, red;
     Mat  bgr[3] = { blue, green, red };

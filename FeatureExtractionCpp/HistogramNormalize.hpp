@@ -2,7 +2,8 @@
 #pragma once
 
 #pragma warning(disable: 4244)
-const Channels default_channels[3] = { Channels::H, Channels::S, Channels::V };
+
+Mat refHistCh[3] = { Mat(), Mat(), Mat() };
 
 // histogram specification & equalization for color images
 class HistogramNormalize
@@ -11,9 +12,9 @@ class HistogramNormalize
 private:
     TransformImage _refImage;
     gpu::GpuMat g_hist;
-    Mat _refHist;
+    vector<Mat> _refHist;
 
-    const vector<Channels> channels;
+    vector<Channels> _channels;
     bool _hasCalcedHist = false;
     bool _hasCalcedFreqHist = false;
 
@@ -24,7 +25,10 @@ private:
             return;
         }
 
-        CalcHist(_refImage, _refHist, channel);
+        for (Channels ch : _channels)
+        {
+            CalcHist(_refImage, _refHist[(int)ch], channel);
+        }
         _hasCalcedHist = true;
     }
 
@@ -116,9 +120,9 @@ private:
     }
 
 public:
-    HistogramNormalize(Mat refImage) : _refImage(refImage), channels(default_channels, default_channels + 3)
+    HistogramNormalize(Mat refImage, vector<Channels> channels) : _refImage(refImage), _refHist(refHistCh, refHistCh + 3), _channels(3)
     { 
-        
+        std::copy(channels.begin(), channels.end(), _channels.begin());
     }
 
     // calculate the histogram for the entire image
@@ -140,7 +144,7 @@ public:
         Mat mapping;
         
         //3. Create the mapping
-        CreateHistMap(_refHist, hist, mapping);
+        CreateHistMap(_refHist[(int)channel], hist, mapping);
 
         //4 actually map the pixels
         dest = Mat::zeros(image.rows, image.cols, CV_8UC1);
