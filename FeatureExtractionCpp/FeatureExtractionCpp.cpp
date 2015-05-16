@@ -1,15 +1,18 @@
 // FeatureExtractionCpp.cpp : Defines the entry point for the console application.
 //
 #include "stdafx.h"
-
 #include "HaemoragingImage.hpp"
 #include "HistogramNormalize.hpp"
 
+namespace fs = boost::filesystem;
 
 const char* keys =
 {
-    "{1||| must specify reference image name}"
-    "{2||| must specify image name}"
+    "{ref||| must specify reference image name}"
+    "{target||| must specify image name}"
+    "{in|inputDir||directory to read files from}"
+    "{out|outDir||output directory}"
+    "{d|debug||invoke debugging functionality}"
 
 };
 
@@ -37,28 +40,28 @@ void thresh_callback(int, void *)
     imshow(sourceWindow, img);
 }
 
-int main(int argc, char** argv)
+// color transfer experiments
+void do_debug(CommandLineParser& parser)
 {
-    CommandLineParser parser(argc, argv, keys);
-    string ref_file_name = parser.get<string>("1");
-    string file_name = parser.get<string>("2");
+    // keep for debugging
+    string ref_file_name = parser.get<string>("ref");
+    string file_name = parser.get<string>("target");
 
-    gpu::printCudaDeviceInfo(0);
-
+    // debugging stuff
     Mat rgb;
     rgb = imread(file_name, IMREAD_COLOR);
 
     auto hi = HaemoragingImage(rgb);
     hi.PyramidDown();
     src = hi.getEnhanced();
-    
+
     rgb = imread(ref_file_name, IMREAD_COLOR);
 
     auto ref_image = HaemoragingImage(rgb);
     ref_image.PyramidDown();
     reference = ref_image.getEnhanced();
 
-    Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::BLUE};
+    Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::BLUE };
     vector<Channels> channels(_channels, _channels + 3);
 
     auto histSpec = HistogramNormalize(reference, channels);
@@ -79,6 +82,68 @@ int main(int argc, char** argv)
     //thresh_callback(0, &(params.cannyThresh));
     //ref_image.DisplayEnhanced(true);
     waitKey(0);
+
+}
+
+void process_files(fs::path& in_path, vector<string>&, fs::path& out_path)
+{
+    //1. Twice Pyramid Down
+    //2. Histogram specification: 6535_left
+    //3. Histogram equalization (CLAHE) on V channel of the HSV image
+    //4. Resize to 100x100
+    //5. Write to out_path
+}
+
+int main(int argc, char** argv)
+{
+    CommandLineParser parser(argc, argv, keys);
+
+    string in_dir = parser.get<string>("in");
+    string out_dir = parser.get<string>("out");
+    
+    bool debug = parser.get<bool>("debug");
+
+    if (debug)
+    {
+        do_debug(parser);
+        return 0;
+    }
+
+    fs::path in_path(in_dir);
+    fs::path out_path(out_dir);
+
+    if (fs::exists(out_path))
+    {
+        fs::remove_all(out_path);
+    }
+
+    fs::create_directories(out_path);
+
+    // print out GPU information
+    gpu::printCudaDeviceInfo(0);
+    fs::directory_iterator it(in_path), enumer(in_path);
+
+    vector<string> in_files;
+    
+    DIR *dir;
+    struct dirent *ent;
+
+    // using dirent because it actually finishes (unlike boost)
+    dir = opendir(in_dir.c_str());
+    if (dir != NULL)
+    {
+        /* Print all files and directories within the directory */
+        while ((ent = readdir(dir)) != NULL)
+        {
+            if (ent->d_type == DT_REG)
+            {
+                in_files.push_back(ent->d_name);
+            }
+        }
+    }
+    closedir(dir);
+
+    process_files(in_path, in_files, out_path);
     return(0);
 }
 

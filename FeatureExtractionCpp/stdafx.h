@@ -21,3 +21,6 @@
 using namespace cv;
 using namespace std;
 #include "Stopwatch.hpp"
+
+#include <boost/filesystem.hpp>
+#include "dirent.h"
