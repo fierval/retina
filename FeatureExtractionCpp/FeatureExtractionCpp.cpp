@@ -21,6 +21,7 @@ RNG rng(12345);
 string sourceWindow("Source");
 string targetWindow("Target");
 string transformedWindow("Transformed");
+string enhancedWindow("Enhanced");
 
 ParamBag params;
 unique_ptr<HaemoragingImage> haemorage(new HaemoragingImage);
@@ -69,6 +70,16 @@ void do_debug(CommandLineParser& parser)
     Mat dest;
     histSpec.HistogramSpecification(src, dest);
 
+    //3. CLAHE
+    hi.setImage(dest);
+    hi.MakeHsv();
+    hi.GetOneChannelImages(Channels::V);
+    hi.ApplyClahe();
+
+    dest = hi.getEnhanced();
+
+    cvtColor(dest, rgb, COLOR_HSV2BGR);
+
     namedWindow(sourceWindow, WINDOW_NORMAL);
     namedWindow(targetWindow, WINDOW_NORMAL);
     namedWindow(transformedWindow, WINDOW_NORMAL);
@@ -76,6 +87,7 @@ void do_debug(CommandLineParser& parser)
     imshow(sourceWindow, reference);
     imshow(targetWindow, src);
     imshow(transformedWindow, dest);
+    imshow(enhancedWindow, rgb);
 
     //params.cannyThresh = 30;
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
@@ -85,13 +97,63 @@ void do_debug(CommandLineParser& parser)
 
 }
 
-void process_files(fs::path& in_path, vector<string>&, fs::path& out_path)
+//1. Pyramid Down
+//2. Histogram specification: 6535_left
+//3. Histogram equalization (CLAHE) on V channel of the HSV image
+//4. Resize to 100x100
+//5. Write to out_path
+void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path)
 {
-    //1. Twice Pyramid Down
-    //2. Histogram specification: 6535_left
-    //3. Histogram equalization (CLAHE) on V channel of the HSV image
-    //4. Resize to 100x100
-    //5. Write to out_path
+    params.cannyThresh = 30;
+    params.blockSize = 11;
+
+    // process reference image
+    Mat rgb = imread(ref, IMREAD_COLOR);
+
+    auto ref_image = HaemoragingImage(rgb);
+    ref_image.PyramidDown();
+    Mat reference = ref_image.getEnhanced();
+
+    Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::BLUE };
+    vector<Channels> channels(_channels, _channels + 3);
+    
+    // create the class for histogram specification
+    auto histSpec = HistogramNormalize(reference, channels);
+
+
+    for (string& in_file : in_files)
+    {
+        // in-path
+        fs::path filePath = in_path /= fs::path(in_file);
+        // out-path
+        fs::path outFilePath = out_path /= fs::path(in_file);
+
+        // read it
+        rgb = imread(filePath.string(), IMREAD_COLOR);
+        HaemoragingImage hi(rgb);
+        // 1. Pyramid down
+        hi.PyramidDown();
+        src = hi.getEnhanced();
+
+        // 2. Histogram specification
+        Mat dest;
+        histSpec.HistogramSpecification(src, dest);
+
+        //3. CLAHE
+        hi.setImage(dest);
+        hi.MakeHsv();
+        hi.GetOneChannelImages(Channels::V);
+        hi.ApplyClahe();
+        
+        src = hi.getEnhanced();
+
+        //4. resize
+        resize(src, dest, Size(100, 100));
+        cvtColor(dest, rgb, COLOR_HSV2BGR);
+
+        //5. write out
+        imwrite(out_path.string(), rgb);
+    }
 }
 
 int main(int argc, char** argv)
@@ -100,6 +162,7 @@ int main(int argc, char** argv)
 
     string in_dir = parser.get<string>("in");
     string out_dir = parser.get<string>("out");
+    string ref = parser.get<string>("ref");
     
     bool debug = parser.get<bool>("debug");
 
@@ -143,7 +206,7 @@ int main(int argc, char** argv)
     }
     closedir(dir);
 
-    process_files(in_path, in_files, out_path);
+    process_files(ref, in_path, in_files, out_path);
     return(0);
 }
 

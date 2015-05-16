@@ -4,6 +4,7 @@
 typedef struct
 {
     int cannyThresh;
+    int blockSize;
 } ParamBag;
 
 enum struct Channels
@@ -125,13 +126,11 @@ public:
 
     gpu::GpuMat& ApplyClahe()
     {
-        MakeSafe();
-
         Ptr<gpu::CLAHE> clahe = gpu::createCLAHE();
 
         clahe->setClipLimit(4.);
         clahe->setTilesGridSize(Size(16, 16));
-        clahe->apply(g_buf, g_enhanced);
+        clahe->apply(g_oneChannel[(int)_channel], g_enhanced);
         return g_enhanced;
     }
 
