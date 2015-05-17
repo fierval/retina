@@ -27,7 +27,7 @@ protected:
     Mat _enhanced;
 
     gpu::GpuMat g_image;
-    gpu::GpuMat g_oneChannel[3];
+    vector<gpu::GpuMat> g_oneChannel;
     gpu::GpuMat g_enhanced;
     gpu::GpuMat g_buf; //bufffer for different operations
     Channels _channel;
@@ -95,12 +95,13 @@ public:
     }
 
     // TODO: this is actually bad since it may throw
-    TransformImage(Mat image) : _image(image)
+    TransformImage(Mat image) : _image(image), g_oneChannel(3)
     {
         g_image.upload(image);
     }
 
-    TransformImage() {}
+    TransformImage() : g_oneChannel(3)
+    {}
 
     Mat& GetCannyEdges(int thresh, Mat& edges)
     {
@@ -131,6 +132,10 @@ public:
         clahe->setClipLimit(4.);
         clahe->setTilesGridSize(Size(16, 16));
         clahe->apply(g_oneChannel[(int)_channel], g_enhanced);
+        
+        g_enhanced.copyTo(g_oneChannel[(int)_channel]);
+        
+        gpu::merge(g_oneChannel, g_enhanced);
         return g_enhanced;
     }
 

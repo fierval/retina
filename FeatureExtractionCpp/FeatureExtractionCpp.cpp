@@ -12,13 +12,14 @@ const char* keys =
     "{target||| must specify image name}"
     "{in|inputDir||directory to read files from}"
     "{out|outDir||output directory}"
+    "{size||128|output image dimensions}"
     "{d|debug||invoke debugging functionality}"
 
 };
 
 Mat src, src_gray, reference;
 RNG rng(12345);
-string sourceWindow("Source");
+string sourceWindow("Reference");
 string targetWindow("Target");
 string transformedWindow("Transformed");
 string enhancedWindow("Enhanced");
@@ -47,6 +48,8 @@ void do_debug(CommandLineParser& parser)
     // keep for debugging
     string ref_file_name = parser.get<string>("ref");
     string file_name = parser.get<string>("target");
+    int dim = parser.get<int>("size");
+    Size size(dim, dim);
 
     // debugging stuff
     Mat rgb;
@@ -56,11 +59,17 @@ void do_debug(CommandLineParser& parser)
     hi.PyramidDown();
     src = hi.getEnhanced();
 
+    namedWindow(targetWindow, WINDOW_NORMAL);
+    imshow(targetWindow, src);
+
     rgb = imread(ref_file_name, IMREAD_COLOR);
 
     auto ref_image = HaemoragingImage(rgb);
     ref_image.PyramidDown();
     reference = ref_image.getEnhanced();
+
+    namedWindow(sourceWindow, WINDOW_NORMAL);
+    imshow(sourceWindow, reference);
 
     Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::BLUE };
     vector<Channels> channels(_channels, _channels + 3);
@@ -69,6 +78,8 @@ void do_debug(CommandLineParser& parser)
 
     Mat dest;
     histSpec.HistogramSpecification(src, dest);
+    namedWindow(transformedWindow, WINDOW_NORMAL);
+    imshow(transformedWindow, dest);
 
     //3. CLAHE
     hi.setImage(dest);
@@ -79,15 +90,11 @@ void do_debug(CommandLineParser& parser)
     dest = hi.getEnhanced();
 
     cvtColor(dest, rgb, COLOR_HSV2BGR);
+    Mat sized;
+    resize(rgb, sized, size);
 
-    namedWindow(sourceWindow, WINDOW_NORMAL);
-    namedWindow(targetWindow, WINDOW_NORMAL);
-    namedWindow(transformedWindow, WINDOW_NORMAL);
-
-    imshow(sourceWindow, reference);
-    imshow(targetWindow, src);
-    imshow(transformedWindow, dest);
-    imshow(enhancedWindow, rgb);
+    namedWindow(enhancedWindow, WINDOW_NORMAL);
+    imshow(enhancedWindow, sized);
 
     //params.cannyThresh = 30;
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
@@ -102,7 +109,7 @@ void do_debug(CommandLineParser& parser)
 //3. Histogram equalization (CLAHE) on V channel of the HSV image
 //4. Resize to 100x100
 //5. Write to out_path
-void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path)
+void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, Size& size)
 {
     params.cannyThresh = 30;
     params.blockSize = 11;
@@ -124,9 +131,9 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
     for (string& in_file : in_files)
     {
         // in-path
-        fs::path filePath = in_path /= fs::path(in_file);
+        fs::path filePath = in_path / fs::path(in_file);
         // out-path
-        fs::path outFilePath = out_path /= fs::path(in_file);
+        fs::path outFilePath = out_path / fs::path(in_file);
 
         // read it
         rgb = imread(filePath.string(), IMREAD_COLOR);
@@ -148,11 +155,11 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         src = hi.getEnhanced();
 
         //4. resize
-        resize(src, dest, Size(100, 100));
+        resize(src, dest, size);
         cvtColor(dest, rgb, COLOR_HSV2BGR);
 
         //5. write out
-        imwrite(out_path.string(), rgb);
+        imwrite(outFilePath.string(), rgb);
     }
 }
 
@@ -163,6 +170,8 @@ int main(int argc, char** argv)
     string in_dir = parser.get<string>("in");
     string out_dir = parser.get<string>("out");
     string ref = parser.get<string>("ref");
+    int dim = parser.get<int>("size");
+    Size size(dim, dim);
     
     bool debug = parser.get<bool>("debug");
 
@@ -206,7 +215,7 @@ int main(int argc, char** argv)
     }
     closedir(dir);
 
-    process_files(ref, in_path, in_files, out_path);
+    process_files(ref, in_path, in_files, out_path, size);
     return(0);
 }
 
