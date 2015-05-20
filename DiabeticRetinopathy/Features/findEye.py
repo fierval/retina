@@ -8,8 +8,8 @@ import environment as evt
 def nothing(*arg):
     pass
 
-def createMask(size, hull):
-    mask = np.zeros((size, size), dtype=np.uint8)
+def createMask((rows, cols), hull):
+    mask = np.zeros((rows, cols), dtype=np.uint8)
     cv2.drawContours(mask, [hull], 0, 255, -1)
     return mask
 
@@ -21,7 +21,7 @@ size = 256
 
 processed_path = path.join(evt.train_path, "dbg")
 sample_path = evt.sample_train
-file_name = "2047_right.jpeg"
+file_name = "2857_right.jpeg"
 
 #sample_image_path = path.join(processed_path, "320_right.jpeg")
 #sample_image_path = path.join(processed_path, "360_right.jpeg")
@@ -68,7 +68,10 @@ while True:
         cv2.drawContours(src, contours, i, (255, 0, 0), 1)
 
     cv2.drawContours(src, [hull], 0, (0, 0, 255), 1)
-    mask = createMask(size, hull)
+    mask = createMask(src.shape[0:2], hull)
+    cv2.namedWindow("Mask")
+    cv2.imshow("Mask", mask)
+
     cv2.drawContours(dest, [hull], 0, (0, 0, 255), 2)
     cv2.imshow("Proc", dest)
     cv2.imshow("Source", src)
