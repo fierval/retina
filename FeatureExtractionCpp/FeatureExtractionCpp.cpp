@@ -17,7 +17,7 @@ const char* keys =
 
 };
 
-Mat src, src_gray;
+Mat src;
 RNG rng(12345);
 string sourceWindow("Reference");
 string targetWindow("Target");
@@ -72,6 +72,7 @@ void do_debug(CommandLineParser& parser)
     // create the image mask to be used last
     auto hi = HaemoragingImage(rgb);
     CreateMask(hi, dim);
+    hi.getEnhanced().copyTo(src);
 
     namedWindow(targetWindow, WINDOW_NORMAL);
     imshow(targetWindow, src);
@@ -81,6 +82,7 @@ void do_debug(CommandLineParser& parser)
 
     // show image contours and filter its background
     HaemoragingImage ref_haem(rgb);
+    ref_haem.PyramidDown();
     Mat reference(ref_haem.getEnhanced());
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
