@@ -115,14 +115,19 @@ public:
         auto channel = _channel;
 
         GetOneChannelImages(Channels::RED);
-        vector<gpu::GpuMat> dest(3);
+
+        vector<gpu::GpuMat> g_dest(3);
+        for (int i = 0; i < 3; i++)
+        {
+            g_dest[i].upload(Mat::zeros(_mask.cols, _mask.rows, CV_8UC1));
+        }
 
         for (int i = 0; i < 3; i++)
         {
-            gpu::bitwise_and(g_oneChannel[i], g_mask, dest[i]);
+            g_oneChannel[i].copyTo(g_dest[i], g_mask);
         }
         
-        gpu::merge(dest, g_enhanced);
+        gpu::merge(g_dest, g_enhanced);
         _channel = channel;
     }
 };

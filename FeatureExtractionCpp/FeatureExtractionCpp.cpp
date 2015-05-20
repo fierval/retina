@@ -14,6 +14,7 @@ const char* keys =
     "{out|outDir||output directory}"
     "{size||128|output image dimensions}"
     "{d|debug||invoke debugging functionality}"
+    "{t|threshold|12|Canny threshold}"
 
 };
 
@@ -43,18 +44,6 @@ void thresh_callback(int, void *)
     imshow(sourceWindow, img);
 }
 
-void CreateMask(HaemoragingImage& haem_image, int dim = -1)
-{
-    haem_image.PyramidDown();
-    Mat reference(haem_image.getEnhanced());
-
-    params.cannyThresh = 10;
-    haem_image.setImage(reference);
-    haem_image.CreateEyeContours(params.cannyThresh);
-
-    haem_image.CreateMask(dim);
-}
-
 // color transfer experiments
 void do_debug(CommandLineParser& parser)
 {
@@ -71,9 +60,16 @@ void do_debug(CommandLineParser& parser)
 
     // create the image mask to be used last
     auto hi = HaemoragingImage(rgb);
-    CreateMask(hi, dim);
+    hi.PyramidDown();
     hi.getEnhanced().copyTo(src);
 
+    hi.setImage(src);
+    hi.CreateEyeContours(params.cannyThresh);
+    auto mask = hi.CreateMask(dim);
+    namedWindow("mask");
+    imshow("mask", mask);
+
+    hi.DrawEyeContours(src, Scalar(0, 0, 255), 2);
     namedWindow(targetWindow, WINDOW_NORMAL);
     imshow(targetWindow, src);
 
@@ -115,7 +111,7 @@ void do_debug(CommandLineParser& parser)
     hi.MaskOffBackground();
 
     namedWindow(enhancedWindow, WINDOW_NORMAL);
-    imshow(enhancedWindow, sized);
+    imshow(enhancedWindow, hi.getEnhanced());
 
     params.cannyThresh = 60;
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
@@ -126,15 +122,14 @@ void do_debug(CommandLineParser& parser)
 }
 
 //1. Pyramid Down
-//2. Histogram specification: 6535_left
-//3. Histogram equalization (CLAHE) on V channel of the HSV image
-//4. Resize to 100x100
-//5. Write to out_path
+//2. Find the eye and get the mask
+//3. Histogram specification: 6535_left
+//4. Histogram equalization (CLAHE) on V channel of the HSV image
+//5. Resize to size x size
+//6. Apply mask to filter background
+//7. Write to out_path
 void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, Size& size)
 {
-    params.cannyThresh = 30;
-    params.blockSize = 11;
-
     // process reference image
     Mat rgb = imread(ref, IMREAD_COLOR);
 
@@ -161,13 +156,18 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         HaemoragingImage hi(rgb);
         // 1. Pyramid down
         hi.PyramidDown();
-        src = hi.getEnhanced();
+        hi.getEnhanced().copyTo(src);
+        hi.setImage(src);
 
-        // 2. Histogram specification
+        // 2. Find contours, get mask.
+        hi.CreateEyeContours(params.cannyThresh);
+        hi.CreateMask(size.width);
+
+        // 3. Histogram specification
         Mat dest;
         histSpec.HistogramSpecification(src, dest);
 
-        //3. CLAHE
+        // 4. CLAHE
         hi.setImage(dest);
         hi.MakeHsv();
         hi.GetOneChannelImages(Channels::V);
@@ -175,12 +175,16 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         
         src = hi.getEnhanced();
 
-        //4. resize
+        // 5. resize
         resize(src, dest, size);
         cvtColor(dest, rgb, COLOR_HSV2BGR);
 
-        //5. write out
-        imwrite(outFilePath.string(), rgb);
+        // 6. apply mask
+        hi.setImage(rgb);
+        hi.MaskOffBackground();
+
+        // 7. write out
+        imwrite(outFilePath.string(), hi.getEnhanced());
     }
 }
 
@@ -191,6 +195,8 @@ int main(int argc, char** argv)
     string in_dir = parser.get<string>("in");
     string out_dir = parser.get<string>("out");
     string ref = parser.get<string>("ref");
+    params.cannyThresh = parser.get<int>("t");
+
     int dim = parser.get<int>("size");
     Size size(dim, dim);
     
