@@ -111,23 +111,6 @@ public:
         }
 
         gpu::GpuMat g_mask(_mask);
-
-        auto channel = _channel;
-
-        GetOneChannelImages(Channels::RED);
-
-        vector<gpu::GpuMat> g_dest(3);
-        for (int i = 0; i < 3; i++)
-        {
-            g_dest[i].upload(Mat::zeros(_mask.cols, _mask.rows, CV_8UC1));
-        }
-
-        for (int i = 0; i < 3; i++)
-        {
-            g_oneChannel[i].copyTo(g_dest[i], g_mask);
-        }
-        
-        gpu::merge(g_dest, g_enhanced);
-        _channel = channel;
+        g_image.copyTo(g_enhanced, g_mask);
     }
 };
