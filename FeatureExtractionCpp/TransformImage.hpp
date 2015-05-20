@@ -86,11 +86,11 @@ public:
     }
 
     // preprocessing may be different
-    gpu::GpuMat& GaussBlur()
+    gpu::GpuMat& GaussBlur(int size = 7, float sigma = 30.)
     {
         MakeSafe();
 
-        gpu::GaussianBlur(g_buf, g_enhanced, Size(5, 5), 30.);
+        gpu::GaussianBlur(g_buf, g_enhanced, Size(size, size), sigma);
         return g_enhanced;
     }
 
@@ -103,10 +103,10 @@ public:
     TransformImage() : g_oneChannel(3)
     {}
 
-    Mat& GetCannyEdges(int thresh, Mat& edges)
+    Mat& GetCannyEdges(int thresh, int thresh1, Mat& edges)
     {
         gpu::GpuMat g_edges;
-        gpu::Canny(g_enhanced, g_edges, thresh, thresh * 2);
+        gpu::Canny(g_enhanced, g_edges, thresh, thresh1);
 
         g_edges.download(edges);
         return edges;
@@ -205,14 +205,13 @@ public:
     }
 
     // slap contours onto an image
-    static void DrawContours(vector<vector<Point>>& contours, vector<Vec4i>& hierarchy, Mat& img, int thickness = CV_FILLED)
+    static void DrawContours(vector<vector<Point>>& contours, vector<Vec4i>& hierarchy, Mat& img, int thickness = CV_FILLED, Scalar& color = Scalar(255, 255, 255))
     {
         int idx = 0;
         if (hierarchy.size() == 0)
         {
             for (idx = 0; idx < contours.size(); idx++)
             {
-                Scalar color = Scalar(255, 255, 255);
                 drawContours(img, contours, idx, color, thickness, 8, noArray());
             }
 
@@ -221,7 +220,6 @@ public:
         {
             for (; idx >= 0; idx = hierarchy[idx][0])
             {
-                Scalar color = Scalar(255, 255, 255);
                 drawContours(img, contours, idx, color, thickness, 8, hierarchy);
             }
         }

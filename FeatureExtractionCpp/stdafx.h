@@ -12,6 +12,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
+#include <stdexcept>
 
 #include <opencv2/core/core.hpp>      // Basic OpenCV structures
 #include <opencv2/imgproc/imgproc.hpp>// Image processing methods for the CPU

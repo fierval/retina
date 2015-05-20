@@ -11,7 +11,7 @@ vector<vector<Point>> * FindHaemorages(unique_ptr<HaemoragingImage>& haemorage, 
 
     //Find edges - first pass
     Mat edges;
-    haemorage->GetCannyEdges(params.cannyThresh, edges);
+    haemorage->GetCannyEdges(params.cannyThresh, params.cannyThresh * 3, edges);
     haemorage->FindBlobContours(edges);
 
     //Flatten what we've got

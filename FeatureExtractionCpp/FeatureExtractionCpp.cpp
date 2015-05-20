@@ -17,12 +17,13 @@ const char* keys =
 
 };
 
-Mat src, src_gray, reference;
+Mat src, src_gray;
 RNG rng(12345);
 string sourceWindow("Reference");
 string targetWindow("Target");
 string transformedWindow("Transformed");
 string enhancedWindow("Enhanced");
+string contouredWindow("Contoured");
 
 ParamBag params;
 unique_ptr<HaemoragingImage> haemorage(new HaemoragingImage);
@@ -42,6 +43,18 @@ void thresh_callback(int, void *)
     imshow(sourceWindow, img);
 }
 
+void CreateMask(HaemoragingImage& haem_image, int dim = -1)
+{
+    haem_image.PyramidDown();
+    Mat reference(haem_image.getEnhanced());
+
+    params.cannyThresh = 10;
+    haem_image.setImage(reference);
+    haem_image.CreateEyeContours(params.cannyThresh);
+
+    haem_image.CreateMask(dim);
+}
+
 // color transfer experiments
 void do_debug(CommandLineParser& parser)
 {
@@ -52,21 +65,23 @@ void do_debug(CommandLineParser& parser)
     Size size(dim, dim);
 
     // debugging stuff
+    // load the target image & show it
     Mat rgb;
     rgb = imread(file_name, IMREAD_COLOR);
 
+    // create the image mask to be used last
     auto hi = HaemoragingImage(rgb);
-    hi.PyramidDown();
-    src = hi.getEnhanced();
+    CreateMask(hi, dim);
 
     namedWindow(targetWindow, WINDOW_NORMAL);
     imshow(targetWindow, src);
 
+    // load the reference image & show it
     rgb = imread(ref_file_name, IMREAD_COLOR);
 
-    auto ref_image = HaemoragingImage(rgb);
-    ref_image.PyramidDown();
-    reference = ref_image.getEnhanced();
+    // show image contours and filter its background
+    HaemoragingImage ref_haem(rgb);
+    Mat reference(ref_haem.getEnhanced());
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
     imshow(sourceWindow, reference);
@@ -93,10 +108,14 @@ void do_debug(CommandLineParser& parser)
     Mat sized;
     resize(rgb, sized, size);
 
+    //apply background filtering mask
+    hi.setImage(sized);
+    hi.MaskOffBackground();
+
     namedWindow(enhancedWindow, WINDOW_NORMAL);
     imshow(enhancedWindow, sized);
 
-    //params.cannyThresh = 30;
+    params.cannyThresh = 60;
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
     //thresh_callback(0, &(params.cannyThresh));
     //ref_image.DisplayEnhanced(true);
