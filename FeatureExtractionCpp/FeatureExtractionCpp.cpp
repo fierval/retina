@@ -51,6 +51,8 @@ void do_debug(CommandLineParser& parser)
     string ref_file_name = parser.get<string>("ref");
     string file_name = parser.get<string>("target");
     int dim = parser.get<int>("size");
+    int thresh = parser.get<int>("t");
+
     Size size(dim, dim);
 
     // debugging stuff
@@ -64,10 +66,18 @@ void do_debug(CommandLineParser& parser)
     hi.getEnhanced().copyTo(src);
 
     hi.setImage(src);
-    hi.CreateEyeContours(params.cannyThresh);
-    auto mask = hi.CreateMask(dim);
-    namedWindow("mask");
-    imshow("mask", mask);
+    int i = 0;
+    do
+    {
+        hi.CreateEyeContours(i == 0 ? thresh : 1);
+        auto mask = hi.CreateMask(dim);
+        i++;
+
+        cout << "Eye area: " << hi.EyeAreaRatio() << endl;
+        namedWindow("mask");
+        imshow("mask", mask);
+    } while (hi.EyeAreaRatio() < 0.48 && i <= 2);
+
 
     hi.DrawEyeContours(src, Scalar(0, 0, 255), 2);
     namedWindow(targetWindow, WINDOW_NORMAL);
@@ -160,8 +170,15 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         hi.setImage(src);
 
         // 2. Find contours, get mask.
-        hi.CreateEyeContours(params.cannyThresh);
-        hi.CreateMask(size.width);
+        // if we did not get the entire eye - reset the threhsold to 1 and repeat
+        int i = 0;
+        do
+        {
+            hi.CreateEyeContours(i == 0 ? params.cannyThresh : 1);
+            hi.CreateMask(size.width);
+            i++;
+
+        } while (hi.EyeAreaRatio() < 0.45 && i <= 2);
 
         // 3. Histogram specification
         Mat dest;

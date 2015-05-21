@@ -32,20 +32,25 @@ private:
         _hasCalcedHist = true;
     }
 
+    // lookup new values using the mapping matrix
     void ImageMap(Mat& image, Mat& dest, Mat& mapping)
     {
-        vector<uchar> mappingV;
-        mapping.copyTo(mappingV);
-        
-        // using the vector is quicker than accessing a matrix
-        for (int i = 0; i < image.rows; i++)
-        {
-            int row = i * image.cols;
-            for (int j = 0; j < image.cols; j++)
-            {
-                dest.at<uchar>(i,j) = mappingV[image.at<uchar>(i, j)];
-            }
-        }
+
+        gpu::GpuMat g_image(image), g_dest(dest);
+        gpu::LUT(g_image, mapping, g_dest);
+        g_dest.download(dest);
+        //vector<uchar> mappingV;
+        //mapping.copyTo(mappingV);
+        //
+        //// using the vector is quicker than accessing a matrix
+        //for (int i = 0; i < image.rows; i++)
+        //{
+        //    int row = i * image.cols;
+        //    for (int j = 0; j < image.cols; j++)
+        //    {
+        //        dest.at<uchar>(i,j) = mappingV[image.at<uchar>(i, j)];
+        //    }
+        //}
     }
 
     void CalcHist(TransformImage& ti, Mat& hist, Channels channel)

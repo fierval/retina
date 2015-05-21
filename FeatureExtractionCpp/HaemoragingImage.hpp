@@ -103,6 +103,21 @@ public:
         return _mask;
     }
 
+    double EyeAreaRatio()
+    {
+        if (_mask.size() == Size(0, 0))
+        {
+            throw logic_error("Need to compute the eye mask first");
+        }
+
+        Scalar mean, std;
+
+        gpu::GpuMat gBuf(_mask);
+
+        gpu::meanStdDev(gBuf, mean, std);
+        return mean[0] / 255.0;
+    }
+
     void MaskOffBackground()
     {
         if (_mask.rows == 0)
