@@ -1,47 +1,34 @@
+#ifndef STOP_H
+#define STOP_H
+
 #include <chrono>
-#pragma once
 
 class Stopwatch
 {
 public:
-    explicit Stopwatch(bool start_immediately = false);
-    void Start(bool reset = false);
-    void Stop();
-    long long Elapsed() const;
+    Stopwatch()
+    {
+        oldTime = std::chrono::high_resolution_clock::now();
+        newTime = oldTime;
+    }
+
+    void tick()
+    {
+        oldTime = newTime;
+        newTime = std::chrono::high_resolution_clock::now();
+    }
+
+    // Returns time elapsed in seconds
+    float Elapsed() const
+    {
+        using std::chrono::duration_cast;
+        using std::chrono::duration;
+        return (duration_cast<duration<float>>(newTime - oldTime)).count();
+    }
 
 private:
-    chrono::time_point<std::chrono::system_clock> start, end;
-    bool running;
+    std::chrono::high_resolution_clock::time_point newTime, oldTime;
 };
-Stopwatch::Stopwatch(bool start_immediately)
-    : start(), end(), running(false)
-{
-    if (start_immediately)
-    {
-        Start(true);
-    }
-}
-void Stopwatch::Start(bool reset)
-{
-    if (!running)
-    {
-        if (reset)
-        {
-            start = chrono::system_clock::now();
-        }
-        running = true;
-    }
-}
-void Stopwatch::Stop()
-{
-    if (running)
-    {
-        end = chrono::system_clock::now();
-        running = false;
-    }
-}
-long long Stopwatch::Elapsed() const
-{
-    chrono::milliseconds elapsed(((running ? chrono::system_clock::now() : end) - start).count());
-    return elapsed.count();
-}
+
+
+#endif // STOP_H

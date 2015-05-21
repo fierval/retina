@@ -27,13 +27,13 @@
     <ClInclude Include="HaemoragingImage.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Stopwatch.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="HistogramNormalize.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dirent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Stopwatch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -32,15 +32,6 @@ private:
         _hasCalcedHist = true;
     }
 
-    // lookup new values using the mapping matrix
-    void ImageMap(Mat& image, Mat& dest, Mat& mapping)
-    {
-
-        gpu::GpuMat g_image(image), g_dest(dest);
-        gpu::LUT(g_image, mapping, g_dest);
-        g_dest.download(dest);
-    }
-
     void CalcHist(TransformImage& ti, Mat& hist, Channels channel)
     {
         int normConst = 0xFF;
@@ -87,9 +78,10 @@ private:
     }
 
     // map inpHist to refHist (in img and ref):
-    // |img[i] - ref[j]| = min(k) |img[i] - ref[k]|
+    // |histDest[i] - histRef[j]| = min(k) |histDest[i] - histRef[k]|
     void CreateHistMap(Mat& ref, Mat& img, Mat& dst)
     {
+        // copying into vectors makes things dramatically faster
         vector<uchar> histSource;
         vector<uchar> histRef;
         vector<uchar> map(ref.cols, 0);
@@ -110,8 +102,10 @@ private:
                 }
             }
         }
-
+        // This creates a 255x1 Mat
         Mat res(map);
+
+        // We want the mapping to be a 1x255 Mat
         transpose(res, dst);
     }
 
@@ -127,7 +121,7 @@ public:
     // Algorithm described here:
     // http://fourier.eng.hmc.edu/e161/lectures/contrast_transform/node3.html
     // if freq is true, ignore channel
-    void HistogramSpecification(Mat& image, Mat& dest, Channels channel)
+    void HistogramSpecification(Mat& image, gpu::GpuMat& dest, Channels channel)
     {
         //1. Get the reference image histogram (cumulative, normalized)
         CalcRefHistogram();
@@ -143,23 +137,25 @@ public:
         CreateHistMap(_refHist[(int)channel], hist, mapping);
 
         //4 actually map the pixels
-        dest = Mat::zeros(image.rows, image.cols, CV_8UC1);
-        Mat im;
-        ti.getChannelImage(channel, im);
+        Mat init = Mat::zeros(image.rows, image.cols, CV_8UC1);
+        dest.upload(init);
+        gpu::GpuMat gim;
+        gim = ti.getChannelImage(channel);
 
-        ImageMap(im, dest, mapping);
-
+        gpu::LUT(gim, mapping, dest);
     }
 
     void HistogramSpecification(Mat& image, Mat& dest)
     {
-        Mat chImg[3] = { Mat(), Mat(), Mat() };
+        gpu::GpuMat chImg[3] = { gpu::GpuMat(), gpu::GpuMat(), gpu::GpuMat() };
         for (Channels channel : _channels)
         {
             int i = (int)channel;
             HistogramSpecification(image, chImg[i], channel);
         }
 
-        merge(chImg, 3, dest);
+        gpu::GpuMat gDest;
+        gpu::merge(chImg, 3, gDest);
+        gDest.download(dest);
     }
 };

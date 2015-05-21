@@ -129,7 +129,6 @@ void do_debug(CommandLineParser& parser)
     namedWindow(enhancedWindow, WINDOW_NORMAL);
     imshow(enhancedWindow, hi.getEnhanced());
 
-    params.cannyThresh = 60;
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
     //thresh_callback(0, &(params.cannyThresh));
     //ref_image.DisplayEnhanced(true);
@@ -271,7 +270,10 @@ int main(int argc, char** argv)
     }
     closedir(dir);
 
+    Stopwatch sw;
     process_files(ref, in_path, in_files, out_path, size);
+    sw.tick();
+    cout << "Elapsed: " << sw.Elapsed() << "sec." << endl;
     return(0);
 }
 

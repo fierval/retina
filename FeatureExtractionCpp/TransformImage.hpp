@@ -231,6 +231,7 @@ public:
     void setChannel(Channels channel) { _channel = channel; }
     Mat& getEnhanced() { g_enhanced.download(_enhanced); return _enhanced; }
     void getChannelImage(Channels channel, Mat& dst) { g_oneChannel[(int)channel].download(dst); }
+    gpu::GpuMat& getChannelImage(Channels channel) { return g_oneChannel[(int)channel]; }
     void setChannelImage(Channels channel, Mat& src) { g_oneChannel[(int)channel].upload(src); }
 
     vector<Vec4i>& getHierarchy() { return _hierarchy; }

@@ -110,12 +110,12 @@ public:
             throw logic_error("Need to compute the eye mask first");
         }
 
-        Scalar mean, std;
+        double mean;
 
-        gpu::GpuMat gBuf(_mask);
+        gpu::GpuMat gMask(_mask), gBuf;
 
-        gpu::meanStdDev(gBuf, mean, std);
-        return mean[0] / 255.0;
+        mean = gpu::countNonZero(gMask, gBuf);
+        return mean / (_mask.rows * _mask.cols);
     }
 
     void MaskOffBackground()
