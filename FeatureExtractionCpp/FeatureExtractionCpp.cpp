@@ -67,9 +67,15 @@ void do_debug(CommandLineParser& parser)
 
     hi.setImage(src);
     int i = 0;
+    int threshTemp = thresh;
     do
     {
-        hi.CreateEyeContours(i == 0 ? thresh : 1);
+        // in vast majority of cases this will only run once
+        for (auto hull = hi.CreateEyeContours(i == 0 ? threshTemp : 1); hull.size() == 0 && threshTemp > 0; threshTemp--)
+        {
+            hull = hi.CreateEyeContours(i == 0 ? --threshTemp : 1);
+        }
+
         auto mask = hi.CreateMask(dim);
         i++;
 
@@ -172,9 +178,15 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         // 2. Find contours, get mask.
         // if we did not get the entire eye - reset the threhsold to 1 and repeat
         int i = 0;
+        int thresh = params.cannyThresh;
         do
         {
-            hi.CreateEyeContours(i == 0 ? params.cannyThresh : 1);
+            // in vast majority of cases this will only run once
+            for (auto hull = hi.CreateEyeContours(i == 0 ? thresh : 1); hull.size() == 0 && thresh > 0; )
+            {
+                hull = hi.CreateEyeContours(i == 0 ? --thresh : 1);
+            }
+
             hi.CreateMask(size.width);
             i++;
 
