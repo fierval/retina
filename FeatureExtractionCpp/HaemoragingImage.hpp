@@ -51,16 +51,9 @@ public:
         //contours
         auto contours = FindBlobContours(edges);
 
-        // approximate contours
-        vector<vector<Point> > contours_poly(contours.size());
-        for (int i = 0; i < contours.size(); i++) 
-        {
-            approxPolyDP(Mat(contours[i]), contours_poly[i], 5, true);
-        }
-
         // merge all contours into one vector
         vector<Point> merged_contour_points;
-        MergeContourPoints(contours_poly, merged_contour_points);
+        MergeContourPoints(contours, merged_contour_points);
 
         // get rotated bounding box
         convexHull(Mat(merged_contour_points), _hull);
