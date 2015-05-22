@@ -44,6 +44,22 @@ void thresh_callback(int, void *)
     imshow(sourceWindow, img);
 }
 
+void CreateMask(HaemoragingImage& hi, int thresh, Mat& mask)
+{
+    int i = 0;
+    do
+    {
+        // in vast majority of cases this will only run once
+        for (auto hull = hi.CreateEyeContours(i == 0 ? thresh : 1); hull.size() == 0 && thresh > 0; thresh--)
+        {
+            hull = hi.CreateEyeContours(i == 0 ? --thresh : 1);
+        }
+
+        mask = hi.CreateMask();
+        i++;
+    } while (hi.EyeAreaRatio() < 0.48 && i <= 2);
+}
+
 // color transfer experiments
 void do_debug(CommandLineParser& parser)
 {
@@ -66,24 +82,13 @@ void do_debug(CommandLineParser& parser)
     hi.getEnhanced().copyTo(src);
 
     hi.setImage(src);
-    int i = 0;
-    int threshTemp = thresh;
-    do
-    {
-        // in vast majority of cases this will only run once
-        for (auto hull = hi.CreateEyeContours(i == 0 ? threshTemp : 1); hull.size() == 0 && threshTemp > 0; threshTemp--)
-        {
-            hull = hi.CreateEyeContours(i == 0 ? --threshTemp : 1);
-        }
 
-        auto mask = hi.CreateMask(dim);
-        i++;
+    Mat mask;
+    CreateMask(hi, thresh, mask);
+    hi.MaskOffBackground();
 
-        cout << "Eye area: " << hi.EyeAreaRatio() << endl;
-        namedWindow("mask");
-        imshow("mask", mask);
-    } while (hi.EyeAreaRatio() < 0.48 && i <= 2);
-
+    namedWindow("Mask");
+    imshow("Mask", mask);
 
     hi.DrawEyeContours(src, Scalar(0, 0, 255), 2);
     namedWindow(targetWindow, WINDOW_NORMAL);
@@ -96,6 +101,9 @@ void do_debug(CommandLineParser& parser)
     HaemoragingImage ref_haem(rgb);
     ref_haem.PyramidDown();
     Mat reference(ref_haem.getEnhanced());
+    ref_haem.setImage(reference);
+    Mat refMask;
+    CreateMask(ref_haem, thresh, refMask);
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
     imshow(sourceWindow, reference);
@@ -103,28 +111,27 @@ void do_debug(CommandLineParser& parser)
     Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::BLUE };
     vector<Channels> channels(_channels, _channels + 3);
 
-    auto histSpec = HistogramNormalize(reference, channels);
+    auto histSpec = HistogramNormalize(reference, refMask, channels);
 
     Mat dest;
-    histSpec.HistogramSpecification(src, dest);
+    histSpec.HistogramSpecification(src, dest, mask);
     namedWindow(transformedWindow, WINDOW_NORMAL);
     imshow(transformedWindow, dest);
 
     //3. CLAHE
     hi.setImage(dest);
+
     hi.MakeHsv();
     hi.GetOneChannelImages(Channels::V);
     hi.ApplyClahe();
 
     dest = hi.getEnhanced();
-
     cvtColor(dest, rgb, COLOR_HSV2BGR);
     Mat sized;
     resize(rgb, sized, size);
 
     //apply background filtering mask
     hi.setImage(sized);
-    hi.MaskOffBackground();
 
     namedWindow(enhancedWindow, WINDOW_NORMAL);
     imshow(enhancedWindow, hi.getEnhanced());
@@ -138,13 +145,15 @@ void do_debug(CommandLineParser& parser)
 
 //1. Pyramid Down
 //2. Find the eye and get the mask
-//3. Histogram specification: 6535_left
-//4. Histogram equalization (CLAHE) on V channel of the HSV image
-//5. Resize to size x size
-//6. Apply mask to filter background
+//3. Apply mask to filter background
+//4. Histogram specification: 6535_left
+//5. Histogram equalization (CLAHE) on V channel of the HSV image
+//6. Resize to size x size
 //7. Write to out_path
 void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, Size& size)
 {
+    int thresh = params.cannyThresh;
+
     // process reference image
     Mat rgb = imread(ref, IMREAD_COLOR);
 
@@ -152,11 +161,15 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
     ref_image.PyramidDown();
     Mat reference = ref_image.getEnhanced();
 
+    ref_image.setImage(reference);
+    Mat mask;
+    CreateMask(ref_image, thresh, mask);
+
     Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::BLUE };
     vector<Channels> channels(_channels, _channels + 3);
     
     // create the class for histogram specification
-    auto histSpec = HistogramNormalize(reference, channels);
+    auto histSpec = HistogramNormalize(reference, mask, channels);
 
 
     for (string& in_file : in_files)
@@ -176,42 +189,29 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
 
         // 2. Find contours, get mask.
         // if we did not get the entire eye - reset the threhsold to 1 and repeat
-        int i = 0;
-        int thresh = params.cannyThresh;
-        do
-        {
-            // in vast majority of cases this will only run once
-            for (auto hull = hi.CreateEyeContours(i == 0 ? thresh : 1); hull.size() == 0 && thresh > 0; )
-            {
-                hull = hi.CreateEyeContours(i == 0 ? --thresh : 1);
-            }
+        CreateMask(hi, thresh, mask);
 
-            hi.CreateMask(size.width);
-            i++;
+        //3. Apply mask to filter background noise
+        hi.MaskOffBackground();
 
-        } while (hi.EyeAreaRatio() < 0.45 && i <= 2);
-
-        // 3. Histogram specification
+        // 4. Histogram specification
         Mat dest;
-        histSpec.HistogramSpecification(src, dest);
+        histSpec.HistogramSpecification(src, dest, mask);
 
-        // 4. CLAHE
+        // 5. CLAHE
         hi.setImage(dest);
+
         hi.MakeHsv();
         hi.GetOneChannelImages(Channels::V);
         hi.ApplyClahe();
         
         src = hi.getEnhanced();
 
-        // 5. resize
+        // 6. resize
         resize(src, dest, size);
         cvtColor(dest, rgb, COLOR_HSV2BGR);
 
-        // 6. apply mask
-        hi.setImage(rgb);
-        hi.MaskOffBackground();
-
-        // 7. write out
+         // 7. write out
         imwrite(outFilePath.string(), hi.getEnhanced());
     }
 }

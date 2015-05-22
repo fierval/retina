@@ -111,8 +111,13 @@ public:
         return mean / (_mask.rows * _mask.cols);
     }
 
-    void MaskOffBackground()
+    void MaskOffBackground(Mat& mask = Mat())
     {
+        if (mask.rows > 0)
+        {
+            _mask = mask;
+        }
+
         if (_mask.rows == 0)
         {
             throw logic_error("Need to compute mask first");

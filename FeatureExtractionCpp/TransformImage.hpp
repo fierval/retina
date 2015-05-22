@@ -118,10 +118,24 @@ public:
         return _contours;
     }
 
-    gpu::GpuMat& GetHist(gpu::GpuMat& dest)
+    Mat& GetHist(Mat& dest, Mat& mask = Mat())
     {
-        // for once use g_buf to avoid memory allocations
-        calcHist(g_enhanced, dest, g_buf);
+        if (mask.size() == Size(0, 0))
+        {
+            // for once use g_buf to avoid memory allocations
+            gpu::GpuMat gDest;
+            calcHist(g_enhanced, gDest, g_buf);
+            gDest.download(dest);
+            return dest;
+        }
+
+        Mat enhanced[] = { getEnhanced() };
+        int histSize[] = { 256 };
+        float hranges[] = { 0, 255 };
+        const float * ranges[] = { hranges };
+        int channels[] = { 0 };
+
+        calcHist(enhanced, 1, channels, mask, dest, 1, histSize, ranges);
         return dest;
     }
 

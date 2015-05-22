@@ -12,6 +12,7 @@ class HistogramNormalize
 private:
     TransformImage _refImage;
     gpu::GpuMat g_hist;
+    Mat _refMask;
     vector<Mat> _refHist;
 
     vector<Channels> _channels;
@@ -27,22 +28,21 @@ private:
 
         for (Channels ch : _channels)
         {
-            CalcHist(_refImage, _refHist[(int)ch], ch);
+            CalcHist(_refImage, _refHist[(int)ch], ch, _refMask);
         }
         _hasCalcedHist = true;
     }
 
-    void CalcHist(TransformImage& ti, Mat& hist, Channels channel)
+    void CalcHist(TransformImage& ti, Mat& hist, Channels channel, Mat& mask = Mat())
     {
         int normConst = 0xFF;
         Mat buf(1, normConst, CV_32SC1);
         ti.GetOneChannelImages(channel);
-        gpu::GpuMat gbuf;
+        
 
         //REVIEW: OpenCV V range is 0 - 255, so simple call to GetHist
         // which is not parameterized should be fine
-        ti.GetHist(gbuf);
-        gbuf.download(buf);
+        ti.GetHist(buf, mask);
 
         Mat image;
         ti.getChannelImage(channel, image);
@@ -64,10 +64,11 @@ private:
             return;
         }
 
-        float normalization = (float)normConst / (total - bufV[i]);
+        float nonZero = countNonZero(mask);
+        float normalization = (float)normConst / nonZero;
         int sum = 0;
 
-        for (i++; i < buf.cols; i++)
+        for (i = 0; i < buf.cols; i++)
         {
             sum += bufV[i];
             cumsumV[i] = saturate_cast<uchar>(sum * normalization);
@@ -109,19 +110,10 @@ private:
         transpose(res, dst);
     }
 
-public:
-    HistogramNormalize(Mat refImage, vector<Channels> channels) : _refImage(refImage), _refHist(refHistCh, refHistCh + 3), _channels(3)
-    { 
-        std::copy(channels.begin(), channels.end(), _channels.begin());
-    }
-
-    // calculate the histogram for the entire image
-    // with "flattened" values of the 3 channels
- 
     // Algorithm described here:
     // http://fourier.eng.hmc.edu/e161/lectures/contrast_transform/node3.html
     // if freq is true, ignore channel
-    void HistogramSpecification(Mat& image, gpu::GpuMat& dest, Channels channel)
+    void HistogramSpecification(Mat& image, gpu::GpuMat& dest, Channels channel, Mat& mask)
     {
         //1. Get the reference image histogram (cumulative, normalized)
         CalcRefHistogram();
@@ -130,9 +122,9 @@ public:
         Mat hist;
 
         //2. Get the input image histogram
-        CalcHist(ti, hist, channel);
+        CalcHist(ti, hist, channel, mask);
         Mat mapping;
-        
+
         //3. Create the mapping
         CreateHistMap(_refHist[(int)channel], hist, mapping);
 
@@ -145,13 +137,23 @@ public:
         gpu::LUT(gim, mapping, dest);
     }
 
-    void HistogramSpecification(Mat& image, Mat& dest)
+public:
+    HistogramNormalize(Mat refImage, Mat refMask, vector<Channels> channels) : _refImage(refImage), _refHist(refHistCh, refHistCh + 3), _channels(3), _refMask(refMask)
+    { 
+        std::copy(channels.begin(), channels.end(), _channels.begin());
+    }
+
+    // calculate the histogram for the entire image
+    // with "flattened" values of the 3 channels
+ 
+
+    void HistogramSpecification(Mat& image, Mat& dest, Mat& mask = Mat())
     {
         gpu::GpuMat chImg[3] = { gpu::GpuMat(), gpu::GpuMat(), gpu::GpuMat() };
         for (Channels channel : _channels)
         {
             int i = (int)channel;
-            HistogramSpecification(image, chImg[i], channel);
+            HistogramSpecification(image, chImg[i], channel, mask);
         }
 
         gpu::GpuMat gDest;
