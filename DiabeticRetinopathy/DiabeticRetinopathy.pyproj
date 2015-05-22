@@ -22,6 +22,12 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Features\color_hist.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Features\findEye.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Features\map_normalize_colors.py" />
     <Compile Include="Features\opencv_feats.py">
       <SubType>Code</SubType>

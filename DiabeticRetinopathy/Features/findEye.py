@@ -4,7 +4,15 @@ from os import path
 import os
 import matplotlib.pyplot as plt
 
-import environment as evt
+root_path = "/kaggle/retina"
+
+# train/test directories
+train_path = path.join(root_path, 'train')
+test_path = path.join(root_path, 'test')
+raw_train = path.join(train_path, 'raw')
+raw_test = path.join(test_path, 'raw')
+sample_train = path.join(train_path, 'sample')
+
 def nothing(*arg):
     pass
 
@@ -16,14 +24,18 @@ def createMask((rows, cols), hull):
 def loadMask(file_path, size):
     return np.fromfile(file_path).reshape(size, size) 
 
-thresh = 10
+thresh = 4
 size = 256
 
-processed_path = path.join(evt.train_path, "dbg")
-sample_path = evt.sample_train
-file_name = "2857_right.jpeg"
+processed_path = path.join(train_path, "dbg")
+sample_path = sample_train
+file_name = "360_right.jpeg"
 
 #sample_image_path = path.join(processed_path, "320_right.jpeg")
+#sample_image_path = path.join(processed_path, "11182_right.jpeg")
+#sample_image_path = path.join(processed_path, "21118_left.jpeg")
+#sample_image_path = path.join(processed_path, "32253_right.jpeg")
+#sample_image_path = path.join(processed_path, "9340_left.jpeg")
 #sample_image_path = path.join(processed_path, "360_right.jpeg")
 #sample_image_path = path.join(processed_path, "2047_right.jpeg") # threshold 73
 #sample_image_path = path.join(processed_path, "2351_right.jpeg") # threshold 60
@@ -38,7 +50,7 @@ srcImage = cv2.resize(cv2.imread(sample_image_path), (size, size))
 srcGrey = cv2.cvtColor(srcImage, cv2.COLOR_BGR2GRAY)
 srcGrey = cv2.resize(cv2.GaussianBlur(srcGrey, (7, 7), 30), (size, size))
 
-dest = cv2.imread(proc_image_path)
+destImg = cv2.imread(proc_image_path)
 
 cv2.namedWindow("Source", cv2.WINDOW_NORMAL)
 cv2.createTrackbar("Threshold", "Source", thresh, thresh * 6, nothing)
@@ -48,6 +60,7 @@ cv2.namedWindow("Proc", cv2.WINDOW_NORMAL)
 while True:
     src = np.copy(srcImage)
     srcG = np.copy(srcGrey)
+    dest = np.copy(destImg)
 
     thresh = cv2.getTrackbarPos("Threshold", "Source")
 
