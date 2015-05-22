@@ -68,7 +68,7 @@ private:
         float normalization = (float)normConst / nonZero;
         int sum = 0;
 
-        for (i = 0; i < buf.cols; i++)
+        for (i = 0; i < buf.rows; i++)
         {
             sum += bufV[i];
             cumsumV[i] = saturate_cast<uchar>(sum * normalization);

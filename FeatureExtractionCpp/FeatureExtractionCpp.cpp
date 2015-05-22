@@ -57,7 +57,7 @@ void CreateMask(HaemoragingImage& hi, int thresh, Mat& mask)
 
         mask = hi.CreateMask();
         i++;
-    } while (hi.EyeAreaRatio() < 0.48 && i <= 2);
+    } while (hi.EyeAreaRatio() < 0.41 && i <= 2);
 }
 
 // color transfer experiments
@@ -85,12 +85,8 @@ void do_debug(CommandLineParser& parser)
 
     Mat mask;
     CreateMask(hi, thresh, mask);
-    hi.MaskOffBackground();
 
-    namedWindow("Mask");
-    imshow("Mask", mask);
-
-    hi.DrawEyeContours(src, Scalar(0, 0, 255), 2);
+    hi.DrawEyeContours(src, Scalar(0, 0, 255), 3);
     namedWindow(targetWindow, WINDOW_NORMAL);
     imshow(targetWindow, src);
 
@@ -120,6 +116,8 @@ void do_debug(CommandLineParser& parser)
 
     //3. CLAHE
     hi.setImage(dest);
+    hi.MaskOffBackground();
+    hi.setImage(hi.getEnhanced());
 
     hi.MakeHsv();
     hi.GetOneChannelImages(Channels::V);
@@ -130,11 +128,8 @@ void do_debug(CommandLineParser& parser)
     Mat sized;
     resize(rgb, sized, size);
 
-    //apply background filtering mask
-    hi.setImage(sized);
-
     namedWindow(enhancedWindow, WINDOW_NORMAL);
-    imshow(enhancedWindow, hi.getEnhanced());
+    imshow(enhancedWindow, rgb);
 
     //createTrackbar("Track", sourceWindow, &(params.cannyThresh), 100, thresh_callback);
     //thresh_callback(0, &(params.cannyThresh));
@@ -162,18 +157,19 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
     Mat reference = ref_image.getEnhanced();
 
     ref_image.setImage(reference);
-    Mat mask;
-    CreateMask(ref_image, thresh, mask);
+    Mat refMask;
+    CreateMask(ref_image, thresh, refMask);
 
     Channels _channels[3] = { Channels::RED, Channels::GREEN, Channels::BLUE };
     vector<Channels> channels(_channels, _channels + 3);
     
     // create the class for histogram specification
-    auto histSpec = HistogramNormalize(reference, mask, channels);
+    auto histSpec = HistogramNormalize(reference, refMask, channels);
 
 
     for (string& in_file : in_files)
     {
+        Mat mask;
         // in-path
         fs::path filePath = in_path / fs::path(in_file);
         // out-path
@@ -191,15 +187,16 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         // if we did not get the entire eye - reset the threhsold to 1 and repeat
         CreateMask(hi, thresh, mask);
 
-        //3. Apply mask to filter background noise
-        hi.MaskOffBackground();
-
-        // 4. Histogram specification
+        // 3. Histogram specification
         Mat dest;
         histSpec.HistogramSpecification(src, dest, mask);
 
-        // 5. CLAHE
+        // 4. CLAHE
         hi.setImage(dest);
+
+        //5. Apply mask to filter background noise
+        hi.MaskOffBackground();
+        hi.setImage(hi.getEnhanced());
 
         hi.MakeHsv();
         hi.GetOneChannelImages(Channels::V);
@@ -212,7 +209,7 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         cvtColor(dest, rgb, COLOR_HSV2BGR);
 
          // 7. write out
-        imwrite(outFilePath.string(), hi.getEnhanced());
+        imwrite(outFilePath.string(), rgb);
     }
 }
 

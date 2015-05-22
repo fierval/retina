@@ -114,7 +114,7 @@ public:
 
     vector<vector<Point>>& FindBlobContours(Mat& edges)
     {
-        findContours(edges, _contours, _hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+        findContours(edges, _contours, _hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
         return _contours;
     }
 
