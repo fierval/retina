@@ -47,6 +47,17 @@ void thresh_callback(int, void *)
 void CreateMask(HaemoragingImage& hi, int thresh, Mat& mask)
 {
     int i = 0;
+    Mat image(hi.getImage()), origImage(hi.getImage());
+
+    // we downsize the image before creating the mask.
+    // due to the nature of our images, it makes sense
+    // to lose some color info: this way the noise will mostly get lost
+    // while the contours of the eye will still get preserved.
+    // improves accuracy and speed
+    Size origSize(image.size());
+    resize(image, image, Size(256, 256));
+    hi.setImage(image);
+
     do
     {
         // in vast majority of cases this will only run once
@@ -54,10 +65,12 @@ void CreateMask(HaemoragingImage& hi, int thresh, Mat& mask)
         {
             hull = hi.CreateEyeContours(i == 0 ? --thresh : 1);
         }
-
+        
         mask = hi.CreateMask();
         i++;
     } while (hi.EyeAreaRatio() < 0.41 && i <= 2);
+    resize(mask, mask, origSize);
+    hi.setImage(origImage);
 }
 
 // color transfer experiments
@@ -78,26 +91,18 @@ void do_debug(CommandLineParser& parser)
 
     // create the image mask to be used last
     auto hi = HaemoragingImage(rgb);
-    hi.PyramidDown();
-    hi.getEnhanced().copyTo(src);
-
-    hi.setImage(src);
 
     Mat mask;
     CreateMask(hi, thresh, mask);
 
-    hi.DrawEyeContours(src, Scalar(0, 0, 255), 3);
     namedWindow(targetWindow, WINDOW_NORMAL);
-    imshow(targetWindow, src);
+    imshow(targetWindow, rgb);
 
     // load the reference image & show it
-    rgb = imread(ref_file_name, IMREAD_COLOR);
+    Mat reference = imread(ref_file_name, IMREAD_COLOR);
 
     // show image contours and filter its background
-    HaemoragingImage ref_haem(rgb);
-    ref_haem.PyramidDown();
-    Mat reference(ref_haem.getEnhanced());
-    ref_haem.setImage(reference);
+    HaemoragingImage ref_haem(reference);
     Mat refMask;
     CreateMask(ref_haem, thresh, refMask);
 
@@ -110,13 +115,13 @@ void do_debug(CommandLineParser& parser)
     auto histSpec = HistogramNormalize(reference, refMask, channels);
 
     Mat dest;
-    histSpec.HistogramSpecification(src, dest, mask);
+    histSpec.HistogramSpecification(rgb, dest, mask);
     namedWindow(transformedWindow, WINDOW_NORMAL);
     imshow(transformedWindow, dest);
 
     //3. CLAHE
     hi.setImage(dest);
-    hi.MaskOffBackground();
+    hi.MaskOffBackground(mask);
     hi.setImage(hi.getEnhanced());
 
     hi.MakeHsv();
@@ -125,8 +130,6 @@ void do_debug(CommandLineParser& parser)
 
     dest = hi.getEnhanced();
     cvtColor(dest, rgb, COLOR_HSV2BGR);
-    Mat sized;
-    resize(rgb, sized, size);
 
     namedWindow(enhancedWindow, WINDOW_NORMAL);
     imshow(enhancedWindow, rgb);
@@ -150,11 +153,9 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
     int thresh = params.cannyThresh;
 
     // process reference image
-    Mat rgb = imread(ref, IMREAD_COLOR);
+    Mat reference = imread(ref, IMREAD_COLOR);
 
-    auto ref_image = HaemoragingImage(rgb);
-    ref_image.PyramidDown();
-    Mat reference = ref_image.getEnhanced();
+    auto ref_image = HaemoragingImage(reference);
 
     ref_image.setImage(reference);
     Mat refMask;
@@ -170,6 +171,8 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
     for (string& in_file : in_files)
     {
         Mat mask;
+        Mat rgb;
+
         // in-path
         fs::path filePath = in_path / fs::path(in_file);
         // out-path
@@ -178,10 +181,6 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         // read it
         rgb = imread(filePath.string(), IMREAD_COLOR);
         HaemoragingImage hi(rgb);
-        // 1. Pyramid down
-        hi.PyramidDown();
-        hi.getEnhanced().copyTo(src);
-        hi.setImage(src);
 
         // 2. Find contours, get mask.
         // if we did not get the entire eye - reset the threhsold to 1 and repeat
@@ -189,23 +188,22 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
 
         // 3. Histogram specification
         Mat dest;
-        histSpec.HistogramSpecification(src, dest, mask);
+        histSpec.HistogramSpecification(rgb, dest, mask);
 
         // 4. CLAHE
         hi.setImage(dest);
 
         //5. Apply mask to filter background noise
-        hi.MaskOffBackground();
+        hi.MaskOffBackground(mask);
         hi.setImage(hi.getEnhanced());
 
         hi.MakeHsv();
         hi.GetOneChannelImages(Channels::V);
         hi.ApplyClahe();
         
-        src = hi.getEnhanced();
+        dest = hi.getEnhanced();
 
-        // 6. resize
-        resize(src, dest, size);
+        // 6. covnert to RGB
         cvtColor(dest, rgb, COLOR_HSV2BGR);
 
          // 7. write out
