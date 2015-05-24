@@ -5,7 +5,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>848a3024-25d2-483f-9116-ad78bdd8a838</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Features\edges.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>Features\;Learning\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -21,8 +22,19 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Features\edges.py" />
-    <Compile Include="Features\extract_1dlbp_images_features.py" />
+    <Compile Include="Features\color_hist.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Features\findEye.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Features\map_normalize_colors.py" />
+    <Compile Include="Features\opencv_feats.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Features\pick_files_of_class.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Features\train_files.py" />
     <Compile Include="Features\tr_utils.py" />
     <Compile Include="Learning\environment.py">
@@ -35,11 +47,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Learning\SupervisedLearning.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Features\Crop on IPython Cluster.ipynb" />
-    <Content Include="Features\Cropping.ipynb" />
-    <Content Include="Features\Resizing.ipynb" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Learning\" />

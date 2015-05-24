@@ -49,7 +49,9 @@ coverage.xml
 
 # Django stuff:
 *.log
-
+x64/
+Debug/
+Release/
 # Sphinx documentation
 docs/_build/
 
@@ -57,3 +59,10 @@ docs/_build/
 target/
 DiabeticRetinopathy/.ipynb_checkpoints
 DiabeticRetinopathy/Dimensions/.ipynb_checkpoints
+
+#cpp
+*.sdf
+*.suo
+*.filters
+*.user
+ipch/
