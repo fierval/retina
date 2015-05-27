@@ -35,6 +35,9 @@
     <Compile Include="Features\pick_files_of_class.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Features\preprocess.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Features\train_files.py" />
     <Compile Include="Features\tr_utils.py" />
     <Compile Include="Learning\environment.py">

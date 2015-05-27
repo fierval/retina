@@ -29,7 +29,7 @@ size = 256
 
 processed_path = path.join(train_path, "dbg")
 sample_path = sample_train
-file_name = "360_right.jpeg"
+file_name = "10169_right.jpeg"
 
 #sample_image_path = path.join(processed_path, "320_right.jpeg")
 #sample_image_path = path.join(processed_path, "11182_right.jpeg")
@@ -69,11 +69,10 @@ while True:
 
     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    polys = cv2.approxPolyDP(contours[0], 5, True)
-    for cnt in contours[1:]:
-        polys = np.vstack((polys, cv2.approxPolyDP(cnt, 5, True)))
-
-    hull_contours = cv2.convexHull(polys)
+    #polys = cv2.approxPolyDP(contours[0], 5, True)
+    #for cnt in contours[1:]:
+    #   polys = np.vstack((polys, cv2.approxPolyDP(cnt, 5, True)))
+    hull_contours = cv2.convexHull(np.vstack(contours))
     hull = np.vstack(hull_contours)
     hull_area = cv2.contourArea(hull)
 
