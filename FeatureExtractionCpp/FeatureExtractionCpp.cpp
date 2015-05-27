@@ -129,6 +129,7 @@ void do_debug(CommandLineParser& parser)
     hi.ApplyClahe();
 
     dest = hi.getEnhanced();
+    resize(dest, dest, size);
     cvtColor(dest, rgb, COLOR_HSV2BGR);
 
     namedWindow(enhancedWindow, WINDOW_NORMAL);
@@ -202,6 +203,7 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         hi.ApplyClahe();
         
         dest = hi.getEnhanced();
+        resize(dest, dest, size);
 
         // 6. covnert to RGB
         cvtColor(dest, rgb, COLOR_HSV2BGR);
