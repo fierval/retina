@@ -12,7 +12,7 @@ const char* keys =
     "{target||| must specify image name}"
     "{in|inputDir||directory to read files from}"
     "{out|outDir||output directory}"
-    "{size||128|output image dimensions}"
+    "{size||0|output image dimensions}"
     "{d|debug||invoke debugging functionality}"
     "{t|threshold|12|Canny threshold}"
 
@@ -129,7 +129,10 @@ void do_debug(CommandLineParser& parser)
     hi.ApplyClahe();
 
     dest = hi.getEnhanced();
-    resize(dest, dest, size);
+    if (size.width > 0)
+    {
+        resize(dest, dest, size);
+    }
     cvtColor(dest, rgb, COLOR_HSV2BGR);
 
     namedWindow(enhancedWindow, WINDOW_NORMAL);
@@ -152,6 +155,7 @@ void do_debug(CommandLineParser& parser)
 void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, Size& size)
 {
     int thresh = params.cannyThresh;
+    bool doResize = size.width > 0;
 
     // process reference image
     Mat reference = imread(ref, IMREAD_COLOR);
@@ -203,7 +207,10 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         hi.ApplyClahe();
         
         dest = hi.getEnhanced();
-        resize(dest, dest, size);
+        if (doResize)
+        {
+            resize(dest, dest, size);
+        }
 
         // 6. covnert to RGB
         cvtColor(dest, rgb, COLOR_HSV2BGR);
