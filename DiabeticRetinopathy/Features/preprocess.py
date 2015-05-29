@@ -28,6 +28,9 @@ def show_images(images,titles=None, scale=1.3):
 def pyr_blurr(image):
     return cv2.GaussianBlur(cv2.pyrDown(image), (7, 7), 30.)
 
+def median_blurr(image, size = 7):
+    return cv2.medianBlur(image, size)
+
 def display_contours(image, contours, color = (255, 0, 0), thickness = -1, title = None):
     imShow = image.copy()
     for i in range(0, len(contours)):

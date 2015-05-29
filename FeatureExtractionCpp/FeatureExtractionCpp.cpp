@@ -45,6 +45,16 @@ void thresh_callback(int, void *)
     imshow(sourceWindow, img);
 }
 
+void CreateDir(fs::path out_path)
+{
+    if (fs::exists(out_path))
+    {
+        fs::remove_all(out_path);
+    }
+
+    fs::create_directories(out_path);
+}
+
 void CreateMask(HaemoragingImage& hi, int thresh, Mat& mask)
 {
     int i = 0;
@@ -154,7 +164,7 @@ void do_debug(CommandLineParser& parser)
 //5. Histogram equalization (CLAHE) on V channel of the HSV image
 //6. Resize to size x size
 //7. Write to out_path
-void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, Size& size, float scale = 1.0)
+void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, fs::path mask_path, Size& size, float scale = 1.0)
 {
     int thresh = params.cannyThresh;
     bool doResize = size.width > 0;
@@ -185,7 +195,7 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         // out-path
         fs::path outFilePath = out_path / fs::path(in_file);
         // mask path
-        fs::path maskFilePath = out_path / (filePath.stem().string() + string(".png"));
+        fs::path maskFilePath = mask_path / (filePath.stem().string() + string(".png"));
 
         // read it
         rgb = imread(filePath.string(), IMREAD_COLOR);
@@ -257,13 +267,10 @@ int main(int argc, char** argv)
 
     fs::path in_path(in_dir);
     fs::path out_path(out_dir);
+    fs::path mask_path(out_dir + "masks");
 
-    if (fs::exists(out_path))
-    {
-        fs::remove_all(out_path);
-    }
-
-    fs::create_directories(out_path);
+    CreateDir(out_path);
+    CreateDir(mask_path);
 
     // print out GPU information
     gpu::printCudaDeviceInfo(0);
@@ -290,7 +297,7 @@ int main(int argc, char** argv)
     closedir(dir);
 
     Stopwatch sw;
-    process_files(ref, in_path, in_files, out_path, size, scale);
+    process_files(ref, in_path, in_files, out_path, mask_path, size, scale);
     sw.tick();
     cout << "Elapsed: " << sw.Elapsed() << "sec." << endl;
     return(0);

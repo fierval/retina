@@ -6,6 +6,7 @@ from skimage.io.collection import ImageCollection
 import os
 from os import path
 from shutil import copy, rmtree
+import cv2
 
 def get_sample_csv(sample_size = 0.1):
     X, Y, _, _ = TrainFiles.from_csv(inp_file, test_size = sample_size)
@@ -46,7 +47,7 @@ labels_file = "/Kaggle/Retina/trainLabels.csv"
 inp_path = "/Kaggle/retina/train/thresh5ref16sc17"
 out_path = "/Kaggle/retina/train/labelled"
 
-def copy_files_to_label_dirs(inp_path, out_path, labels_file):
+def copy_files_to_label_dirs(inp_path, out_path, labels_file, process = None):
     prep_out_path(out_path)
     
     for i in range(0, 5):
@@ -56,9 +57,23 @@ def copy_files_to_label_dirs(inp_path, out_path, labels_file):
     existing_files = pd.DataFrame([path.splitext(f)[0] for f in os.listdir(inp_path)], columns =[labels.columns[0]])
     existing_files = existing_files.merge(labels, on=existing_files.columns[0])
     
+    def processAndCopy(inp_file, out_file):
+        im = cv2.imread(inp_file)
+        im = process(im)
+        cv2.imwrite(out_file, im)
+
+    if process == None:
+        process = emptyProcess
+
     for f, l in zip(existing_files['image'], existing_files['level']):
         file_name = path.join(out_path, str(l), f + ".jpeg")
         inp_file = path.join(inp_path, f + '.jpeg')
-        copy(inp_file, file_name)
+        if process == None:
+            copy(inp_file, file_name)
+        else:
+            processAndCopy(inp_file, file_name)
+
         print "copied {0} to {1}".format(inp_file, file_name)
-    
+
+def post_proc(im):
+    return cv2.medianBlur(im, 13)

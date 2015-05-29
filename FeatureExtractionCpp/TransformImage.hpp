@@ -94,6 +94,16 @@ public:
         return g_enhanced;
     }
 
+    Mat& MedianBlur(int size = 7)
+    {
+        Mat buf;
+        g_enhanced.download(buf);
+        medianBlur(buf, _enhanced, size);
+
+        g_enhanced.upload(_enhanced);
+        return _enhanced;
+    }
+
     // TODO: this is actually bad since it may throw
     TransformImage(Mat image) : _image(image), g_oneChannel(3)
     {
