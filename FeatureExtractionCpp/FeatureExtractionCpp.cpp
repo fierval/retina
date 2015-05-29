@@ -15,6 +15,7 @@ const char* keys =
     "{size||0|output image dimensions}"
     "{d|debug||invoke debugging functionality}"
     "{t|threshold|12|Canny threshold}"
+    "{scale||1|image scale}"
 
 };
 
@@ -81,6 +82,7 @@ void do_debug(CommandLineParser& parser)
     string file_name = parser.get<string>("target");
     int dim = parser.get<int>("size");
     int thresh = parser.get<int>("t");
+    float scale = parser.get<float>("scale");
 
     Size size(dim, dim);
 
@@ -152,7 +154,7 @@ void do_debug(CommandLineParser& parser)
 //5. Histogram equalization (CLAHE) on V channel of the HSV image
 //6. Resize to size x size
 //7. Write to out_path
-void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, Size& size)
+void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, Size& size, float scale = 1.0)
 {
     int thresh = params.cannyThresh;
     bool doResize = size.width > 0;
@@ -182,6 +184,8 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         fs::path filePath = in_path / fs::path(in_file);
         // out-path
         fs::path outFilePath = out_path / fs::path(in_file);
+        // mask path
+        fs::path maskFilePath = out_path / (filePath.stem().string() + string(".png"));
 
         // read it
         rgb = imread(filePath.string(), IMREAD_COLOR);
@@ -209,7 +213,16 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         dest = hi.getEnhanced();
         if (doResize)
         {
-            resize(dest, dest, size);
+            resize(dest, dest, size, INTER_AREA);
+            resize(mask, mask, size, INTER_AREA);
+        }
+        else if (scale != 1.0)
+        {
+            int cols = (int)(dest.cols / scale);
+            int rows = (int)(dest.rows / scale);
+            Size scaled = Size(cols, rows);
+            resize(dest, dest, scaled, INTER_AREA);
+            resize(mask, mask, scaled, INTER_AREA);
         }
 
         // 6. covnert to RGB
@@ -217,6 +230,7 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
 
          // 7. write out
         imwrite(outFilePath.string(), rgb);
+        imwrite(maskFilePath.string(), mask);
     }
 }
 
@@ -228,6 +242,7 @@ int main(int argc, char** argv)
     string out_dir = parser.get<string>("out");
     string ref = parser.get<string>("ref");
     params.cannyThresh = parser.get<int>("t");
+    float scale = parser.get<float>("scale");
 
     int dim = parser.get<int>("size");
     Size size(dim, dim);
@@ -275,7 +290,7 @@ int main(int argc, char** argv)
     closedir(dir);
 
     Stopwatch sw;
-    process_files(ref, in_path, in_files, out_path, size);
+    process_files(ref, in_path, in_files, out_path, size, scale);
     sw.tick();
     cout << "Elapsed: " << sw.Elapsed() << "sec." << endl;
     return(0);

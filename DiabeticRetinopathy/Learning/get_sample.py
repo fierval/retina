@@ -1,8 +1,5 @@
-from kobra import SKSupervisedLearning
 from kobra.tr_utils import prep_out_path
-from sklearn.ensemble import GradientBoostingClassifier
 import pandas as pd
-import numpy as np
 from sklearn.cross_validation import train_test_split
 from kobra.train_files import TrainFiles
 from skimage.io.collection import ImageCollection
@@ -45,9 +42,9 @@ def sample_files(labels, size, inp_path, out_path):
     for src, dst in zip(inp_files, out_files):
         copy(src, dst)
 
-labels_file = "/home/boris/Kaggle/Retina/trainLabels.csv"    
-inp_path = "/home/boris/Dropbox/Kaggle/retina/train/thresh5size512"
-out_path = "/home/boris/Dropbox/Kaggle/retina/train/digits"
+labels_file = "/Kaggle/Retina/trainLabels.csv"    
+inp_path = "/Kaggle/retina/train/thresh5ref16sc17"
+out_path = "/Kaggle/retina/train/labelled"
 
 def copy_files_to_label_dirs(inp_path, out_path, labels_file):
     prep_out_path(out_path)
