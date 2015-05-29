@@ -1,10 +1,10 @@
 from sklearn.ensemble import GradientBoostingClassifier
 from environment import sample_file
 from sklearn.cross_validation import train_test_split
-from SupervisedLearning import SKSupervisedLearning
-from train_files import TrainFiles
+from kobra import SKSupervisedLearning
+from kobra import TrainFiles
 import matplotlib.pylab as plt
-from tr_utils import time_now_str
+from kobra.tr_utils import time_now_str
 import numpy as np
 import time
 from sklearn.metrics.metrics import confusion_matrix

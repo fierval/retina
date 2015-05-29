@@ -1,15 +1,14 @@
-from SupervisedLearning import SKSupervisedLearning
+from kobra import SKSupervisedLearning
+from kobra.tr_utils import prep_out_path
 from sklearn.ensemble import GradientBoostingClassifier
 import pandas as pd
 import numpy as np
-from environment import inp_file, sample_file, train_path, raw_train, sample_train, labels_file
 from sklearn.cross_validation import train_test_split
-from train_files import TrainFiles
+from kobra.train_files import TrainFiles
 from skimage.io.collection import ImageCollection
 import os
 from os import path
 from shutil import copy, rmtree
-from tr_utils import prep_out_path
 
 def get_sample_csv(sample_size = 0.1):
     X, Y, _, _ = TrainFiles.from_csv(inp_file, test_size = sample_size)
@@ -32,7 +31,7 @@ def get_sample_of_class(classs, labels, input_path, num = -1):
     return ImageCollection(files, conserve_memory = True)
 
 
-def sample_files(labels, size, inp_path = raw_train, out_path = sample_train):
+def sample_files(labels, size, inp_path, out_path):
     if path.exists(out_path):
         rmtree(out_path)
     os.makedirs(out_path)

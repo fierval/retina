@@ -22,13 +22,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Features\color_hist.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\map_normalize_colors.py" />
     <Compile Include="Features\opencv_feats.py">
       <SubType>Code</SubType>
     </Compile>
@@ -38,8 +34,6 @@
     <Compile Include="Features\preprocess.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\train_files.py" />
-    <Compile Include="Features\tr_utils.py" />
     <Compile Include="Learning\environment.py">
       <SubType>Code</SubType>
     </Compile>
@@ -49,7 +43,6 @@
     <Compile Include="Learning\gradient_boosting.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Learning\SupervisedLearning.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Learning\" />

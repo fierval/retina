@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import pandas as pd
 
+
 def show_images(images,titles=None, scale=1.3):
     """Display a list of images"""
     n_ims = len(images)
