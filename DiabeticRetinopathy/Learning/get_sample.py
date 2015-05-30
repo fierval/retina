@@ -63,15 +63,14 @@ def copy_files_to_label_dirs(inp_path, out_path, labels_file, process = None):
         cv2.imwrite(out_file, im)
 
     if process == None:
-        process = emptyProcess
+        cp = copy
+    else:
+        cp = processAndCopy
 
     for f, l in zip(existing_files['image'], existing_files['level']):
         file_name = path.join(out_path, str(l), f + ".jpeg")
         inp_file = path.join(inp_path, f + '.jpeg')
-        if process == None:
-            copy(inp_file, file_name)
-        else:
-            processAndCopy(inp_file, file_name)
+        cp(inp_file, file_name)
 
         print "copied {0} to {1}".format(inp_file, file_name)
 

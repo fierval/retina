@@ -25,6 +25,9 @@
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Features\cmf_classify.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Features\opencv_feats.py">
       <SubType>Code</SubType>
     </Compile>
