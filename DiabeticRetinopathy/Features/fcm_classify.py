@@ -6,8 +6,9 @@ from os import path
 import os
 import shutil
 from kobra.tr_utils import append_to_arr
+from kobra.imaging import show_images
 
-class CmfClassify (object):
+class FcmClassify (object):
     def __init__(self, root, annotations):
         '''
         root - root directory for images
@@ -58,7 +59,7 @@ class CmfClassify (object):
         self._avg_pixels = np.array([], dtype=np.uint8)
 
         # extract parts from each image for all of our 6 categories
-        for i in range(0, len(self._files)):
+        for i in range(0, self._n_objects):
             rects = self._rects[:, i]
             rows = np.max(rects['f2'] - rects['f0'])
             cols = np.max(rects['f3'] - rects['f1'])
@@ -80,4 +81,13 @@ class CmfClassify (object):
         '''
         return rect[1], rect[0], rect[3], rect[2]
     
-    
+    def display_average_pixels(self):
+        def stretch_image(i):
+            pixel = self._avg_pixels[i]
+            stretch = np.zeros((20, 20, 3), dtype='uint8')
+            stretch[:, :] = pixel
+            return stretch
+
+        images = [stretch_image(i) for i in range(0, self._n_objects)]
+
+        show_images(images)
