@@ -9,11 +9,12 @@ from kobra.tr_utils import append_to_arr
 from kobra.imaging import show_images
 
 class FcmClassify (object):
-    def __init__(self, root, annotations):
+    def __init__(self, root, annotations, masks_dir = None):
         '''
         root - root directory for images
         annotations - path to the annotations file
         '''
+        self._masks_dir = masks_dir
         self._root = root
         self._annotations = annotations
         self._pd_annotations = pd.read_csv(self._annotations, sep= ' ', header = None)
@@ -46,6 +47,17 @@ class FcmClassify (object):
             
             self._rects = append_to_arr(self._rects, rects)                            
 
+    @property
+    def masks_dir(self):
+        """
+        Directory that contains ".png" masks of the images
+        """
+        return self._masks_dir
+
+    @masks_dir.setter
+    def masks_dir(self, val):
+        self._masks_dir = val
+    
     def _get_initial_classes(self):
         '''
         Averages of the pixels values of all images:
