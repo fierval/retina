@@ -1,19 +1,22 @@
 import cv2
 import pandas as pd
 import numpy as np
-import skfuzzy.cluster as cmf
+from sklearn.neighbors import KNeighborsClassifier
 from os import path
 import os
 import shutil
 from kobra.tr_utils import append_to_arr
-from kobra.imaging import show_images
+from kobra.imaging import show_images, pyr_blurr
 
-class FcmClassify (object):
-    def __init__(self, root, annotations, masks_dir = None):
+class KNeighborsClassify (object):
+    def __init__(self, root, annotation_images_dir, annotations, masks_dir):
         '''
         root - root directory for images
+        annotations_images_dir - where annotations images are
+        masks_dir - where masks are
         annotations - path to the annotations file
         '''
+        self._annotation_images_dir = annotation_images_dir
         self._masks_dir = masks_dir
         self._root = root
         self._annotations = annotations
@@ -30,6 +33,7 @@ class FcmClassify (object):
         rows = rect_frame.shape[0]
         rect_frame = np.vsplit(rect_frame, rows)
         self._rects = np.array([])
+        self._avg_pixels = None
         
         # convert number-by-number columns into rectangles
         for row in rect_frame:
@@ -47,17 +51,6 @@ class FcmClassify (object):
             
             self._rects = append_to_arr(self._rects, rects)                            
 
-    @property
-    def masks_dir(self):
-        """
-        Directory that contains ".png" masks of the images
-        """
-        return self._masks_dir
-
-    @masks_dir.setter
-    def masks_dir(self, val):
-        self._masks_dir = val
-    
     def _get_initial_classes(self):
         '''
         Averages of the pixels values of all images:
@@ -85,6 +78,11 @@ class FcmClassify (object):
                 self._avg_pixels = mn
             else:
                 self._avg_pixels = np.vstack((self._avg_pixels, mn))
+        
+        self._labels = [0, 0, 1, 1, 3, 4, -1]
+
+        # append the background pixel
+        self._avg_pixels = np.vstack((self._avg_pixels, np.array([0, 0, 0])))
             
     @staticmethod
     def flip(rect):
@@ -94,6 +92,9 @@ class FcmClassify (object):
         return rect[1], rect[0], rect[3], rect[2]
     
     def display_average_pixels(self):
+        if self._avg_pixels == None:
+            self._get_initial_classes()
+
         def stretch_image(i):
             pixel = self._avg_pixels[i]
             stretch = np.zeros((20, 20, 3), dtype='uint8')
@@ -103,3 +104,48 @@ class FcmClassify (object):
         images = [stretch_image(i) for i in range(0, self._n_objects)]
 
         show_images(images)
+
+    
+    def analyze_image(self, im_file):
+        '''
+        Load the image and analyze it with FCM
+        '''
+
+        if self._avg_pixels == None:
+            self._get_initial_classes()
+
+        im_file_name = path.splitext(path.split(im_file)[1])[0]
+
+        mask_file = path.join(self._masks_dir, im_file_name + ".png")
+
+        mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
+        mask = pyr_blurr(mask)
+
+        mask [ mask != 0 ] = 255
+        rows = mask.shape[0]
+
+        im = cv2.imread(im_file)
+        im = pyr_blurr(im)
+
+        assert (im.shape[0] == rows), "Rows don't match between mask and image"
+
+        im [ mask == 0, :] = 0
+
+        clf = KNeighborsClassifier(n_neighbors = 3)
+        clf.fit(self._avg_pixels, self._labels)
+
+        im_1d = im.reshape(-1, 3)
+
+        prediction = clf.predict(im_1d)
+        prediction = prediction.reshape(rows, -1)
+
+        # display what we have found
+        im_drusen = im.copy()
+        im_bg = im.copy()
+
+        im_drusen [pred == 0] = [255, 0, 0]
+        im_bg [pred == 1] = [0, 255, 0]
+
+        show_images([im, im_drusen, im_bg], ["original", "drusen", "background"], scale = 0.8)
+
+
