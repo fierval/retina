@@ -7,9 +7,10 @@ import os
 import shutil
 from kobra.tr_utils import append_to_arr
 from kobra.imaging import show_images, pyr_blurr
+from numbapro import vectorize
 
 class KNeighborsClassify (object):
-    def __init__(self, root, annotation_images_dir, annotations, masks_dir):
+    def __init__(self, root, annotation_images_dir, annotations, masks_dir, neighbors = "mean"):
         '''
         root - root directory for images
         annotations_images_dir - where annotations images are
@@ -35,6 +36,10 @@ class KNeighborsClassify (object):
         self._rects = np.array([])
         self._avg_pixels = None
         
+        self._get_initial_classes = self._get_initial_classes_avg
+        if neighbors == "frequent":
+            self._get_initial_classes = self._get_initial_classes_median
+                        
         # convert number-by-number columns into rectangles
         for row in rect_frame:
             row = row.reshape(-1)
@@ -51,7 +56,7 @@ class KNeighborsClassify (object):
             
             self._rects = append_to_arr(self._rects, rects)                            
 
-    def _get_initial_classes(self):
+    def _get_initial_classes_avg(self):
         '''
         Averages of the pixels values of all images:
         Annotations contain:
@@ -84,6 +89,34 @@ class KNeighborsClassify (object):
         # append the background pixel
         self._avg_pixels = np.vstack((self._avg_pixels, np.array([0, 0, 0])))
             
+    def _get_initial_classes_frequent(self):
+        images = map(lambda f: cv2.imread(path.join(self._root, f)), self._files)
+        self._avg_pixels = np.array([0, 0, 0], dtype=np.uint8)
+        labels = np.uint8([0, 0, 1, 1, 3, 4])
+        self._labels = np.uint8([-1])
+
+        for i in range(0, self._n_objects):
+            rects = self._rects[:, i]
+
+            im_rects = map(lambda (im, r): im[r[0]:r[2],r[1]:r[3],:], zip(images, rects))
+            maxPix = np.uint8([])
+            cur_labels = np.uint8([])
+            cur_label = labels[i]
+
+            for rect in im_rects:
+                hist = \
+                    cv2.calcHist([rect], [0, 1, 2], None, [256, 256, 256], [0, 255, 0, 255, 0, 255])
+                # take all the values except 0
+                vals_hist_max = np.argmax(np.bincount(hist.astype('int').reshape(-1))[1:]) + 1
+                maxVal = np.argwhere(hist == vals_hist_max)
+                maxPix = maxVal if (maxPix.size == 0) else np.vstack((maxPix, maxVal))
+                maxLabels = np.repeat([cur_label], maxVal.shape[0])
+
+                cur_labels = maxLabels if cur_labels.size == 0 else np.append(cur_labels, maxLabels)
+
+            self._labels = np.append(self._labels, cur_labels)
+            self._avg_pixels = np.vstack((self._avg_pixels, maxPix))
+
     @staticmethod
     def flip(rect):
         '''
@@ -131,7 +164,7 @@ class KNeighborsClassify (object):
 
         im [ mask == 0, :] = 0
 
-        clf = KNeighborsClassifier(n_neighbors = 3)
+        clf = KNeighborsClassifier(n_neighbors = 50)
         clf.fit(self._avg_pixels, self._labels)
 
         im_1d = im.reshape(-1, 3)
@@ -143,8 +176,8 @@ class KNeighborsClassify (object):
         im_drusen = im.copy()
         im_bg = im.copy()
 
-        im_drusen [pred == 0] = [255, 0, 0]
-        im_bg [pred == 1] = [0, 255, 0]
+        im_drusen [prediction == 0] = [255, 0, 0]
+        im_bg [prediction == 1] = [0, 255, 0]
 
         show_images([im, im_drusen, im_bg], ["original", "drusen", "background"], scale = 0.8)
 
