@@ -1,8 +1,9 @@
 import cv2
 import pandas as pd
 import numpy as np
-import kobra.imaging as kim
+from kobra.imaging import show_images
 from os import path
+from imutils import translate
 
 class DetectOD(object):
     def __init__(self, im_file, mask_dir):
@@ -21,7 +22,8 @@ class DetectOD(object):
         #self._img = kim.pyr_blurr(self._img)
         self._img = cv2.resize(self._img, (540, 540))
         self._mask = cv2.resize(self._mask, (540, 540))
-        self._invert_mask = cv2.bitwise_not(self._mask)
+
+        self._shifted = cv2.bitwise_and(translate(self._mask, 50, 0), translate(self._mask, -50, 0))
 
         self._img [self._mask == 0] = 0
 
@@ -70,9 +72,27 @@ class DetectOD(object):
         return self._processed
     
     def apply_morphology(self):
-        for r in range(2, 10, 2):
+        for r in range(2, 12, 2):
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r, 2 * r))
             self._processed = cv2.morphologyEx(self._processed, cv2.MORPH_OPEN, kernel)
             self._processed = cv2.morphologyEx(self._processed, cv2.MORPH_CLOSE, kernel)
 
         return self._processed
+
+    def locate_disk(self):
+        self.shade_correct()
+        self.apply_morphology()
+
+        pr = self._processed.copy().astype('uint8')
+
+        # kill possible bright edges of the image
+        pr[self._shifted == 0] = 0
+
+        _, maxCol, _, ctr = cv2.minMaxLoc(pr)
+        return ctr
+
+    def show_detected(self, ctr):
+        pr = self._processed.copy().astype('uint8')
+        cv2.circle(pr, ctr, 50, 0, 3)
+        cv2.circle(self.image, ctr, 50, (0, 0, 0), 3)
+        show_images([self.image, pr])
