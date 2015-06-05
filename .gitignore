@@ -57,8 +57,7 @@ docs/_build/
 
 # PyBuilder
 target/
-DiabeticRetinopathy/.ipynb_checkpoints
-DiabeticRetinopathy/Dimensions/.ipynb_checkpoints
+.ipynb_checkpoints/
 
 #cpp
 *.sdf
@@ -66,3 +65,5 @@ DiabeticRetinopathy/Dimensions/.ipynb_checkpoints
 *.filters
 *.user
 ipch/
+OpenCVSamples/
+/DiabeticRetinopathy/.spyderproject
