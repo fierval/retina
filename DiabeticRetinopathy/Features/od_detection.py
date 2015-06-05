@@ -71,7 +71,7 @@ class DetectOD(object):
     
     def apply_morphology(self):
         for r in range(2, 10, 2):
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (r, r))
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r, 2 * r))
             self._processed = cv2.morphologyEx(self._processed, cv2.MORPH_OPEN, kernel)
             self._processed = cv2.morphologyEx(self._processed, cv2.MORPH_CLOSE, kernel)
 
