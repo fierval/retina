@@ -6,6 +6,15 @@ from os import path
 from imutils import translate
 
 class DetectOD(object):
+    '''
+    Detecting location of the optic disk (OD)
+    based on the morphological method proposed in
+    Suero, Marin, et. al. -- Locating the Optic Disc in Retinal Images Using
+    Morphological Techniques.
+    
+    Image masks should be extracted prior to using this class and placed in mask_dir.
+    These masks are detected locations of the actual eye in the image being processed 
+    '''
     def __init__(self, im_file, mask_dir):
 
         assert (path.exists(im_file)), "Image not found"
@@ -18,8 +27,10 @@ class DetectOD(object):
 
         assert (self._img.size > 0), "Image not found"
         assert (self._mask.size > 0), "Mask not found"
+        
+        self._scale = np.float32(self._img.shape)[:-1] / 540.
+        self._scale[0], self._scale[1] = self._scale[1], self._scale[0]
 
-        #self._img = kim.pyr_blurr(self._img)
         self._img = cv2.resize(self._img, (540, 540))
         self._mask = cv2.resize(self._mask, (540, 540))
 
@@ -96,3 +107,7 @@ class DetectOD(object):
         cv2.circle(pr, ctr, 50, 0, 3)
         cv2.circle(self.image, ctr, 50, (0, 0, 0), 3)
         show_images([self.image, pr])
+
+    def rescale_to_original(self, pt):
+        ctr_orig = np.float32(pt) * self._scale
+        return (ctr_orig[0], ctr_orig[1])
