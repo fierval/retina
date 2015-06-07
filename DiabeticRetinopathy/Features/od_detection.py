@@ -21,18 +21,19 @@ class DetectOD(object):
         assert (path.exists(mask_dir)), "Mask not found"
 
         self._im_name = path.splitext(path.split(im_file)[1])[0]
-        mask_file = path.join(mask_dir, self._im_name + ".png")
+        self._mask_file = path.join(mask_dir, self._im_name + ".png")
         self._img = cv2.imread(im_file)
-        self._mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
+        self._orig_mask = cv2.imread(self._mask_file, cv2.IMREAD_GRAYSCALE)
 
         assert (self._img.size > 0), "Image not found"
-        assert (self._mask.size > 0), "Mask not found"
+        assert (self._orig_mask.size > 0), "Mask not found"
         
-        self._scale = np.float32(self._img.shape)[:-1] / 540.
+        self._img = cv2.resize(self._img, (540, 540))
+        
+        self._scale = np.float32(self._orig_mask.shape) / 540.
         self._scale[0], self._scale[1] = self._scale[1], self._scale[0]
 
-        self._img = cv2.resize(self._img, (540, 540))
-        self._mask = cv2.resize(self._mask, (540, 540))
+        self._mask = cv2.resize(self._orig_mask, (540, 540))
 
         self._shifted = cv2.bitwise_and(translate(self._mask, 40, 30), translate(self._mask, -40, -30))
 
@@ -63,7 +64,7 @@ class DetectOD(object):
         gamma = self.remove_light_reflex()
 
         # mean filter
-        self._processed = cv2.blur(self._processed, (3, 3))
+        self._processed = cv2.medianBlur(self._processed, 3)
         # Gaussian convolution
         self._processed = cv2.GaussianBlur(self._processed, (9, 9), 1.8)
         
@@ -108,6 +109,23 @@ class DetectOD(object):
         cv2.circle(self.image, ctr, 50, (0, 0, 0), 3)
         show_images([self.image, pr])
 
-    def rescale_to_original(self, pt):
+    def _rescale_to_original_mask(self, pt):
         ctr_orig = np.float32(pt) * self._scale
         return (ctr_orig[0], ctr_orig[1])
+
+    def mask_off_od(self):
+        ctr = self.locate_disk()
+        ctr_mask = self._rescale_to_original_mask(ctr)
+        mask = self._orig_mask
+        mask_radius = sqrt(cv2.countNonZero(mask) / math.pi)
+        od_radius = int(round(0.22 * mask_radius))
+
+        cv2.circle(mask, ctr_mask, od_radius, 0, -1)
+        return mask
+
+    def show_detected_mask(self):
+        mask = self.mask_off_od()
+        mask = cv2.resize(mask, (540, 540))
+        im = self._img.copy()
+        im[mask == 0] = 0
+        show_images([self._img, im])
