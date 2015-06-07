@@ -36,3 +36,18 @@ def display_contours(image, contours, color = (255, 0, 0), thickness = -1, title
     for i in range(0, len(contours)):
         cv2.drawContours(imShow, contours, i, color, thickness)
     show_images([imShow], scale=0.7, titles=title)
+
+def salt_and_peper(im, fraction = 0.01):
+
+    assert (0 < fraction <= 1.), "Fraction must be in (0, 1]"
+
+    sp = np.zeros(im.shape)
+    percent = round(fraction * 100 / 2.)
+
+    cv2.randu(sp, 0, 100)
+
+    # quarter salt quarter pepper
+    im_sp = im.copy()
+    im_sp [sp < percent] = 0
+    im_sp [sp > 100 - percent] = 255
+    return im_sp
