@@ -7,7 +7,6 @@ import os
 import shutil
 from kobra.tr_utils import append_to_arr
 from kobra.imaging import show_images, pyr_blurr
-from numbapro import vectorize
 
 class KNeighborsClassify (object):
     def __init__(self, root, annotation_images_dir, annotations, masks_dir):

@@ -22,10 +22,13 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Features\exudates_detection.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\fcm_classify.py">
+    <Compile Include="Features\knn_classify.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\od_detection.py">

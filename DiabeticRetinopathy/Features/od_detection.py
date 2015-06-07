@@ -34,7 +34,7 @@ class DetectOD(object):
         self._img = cv2.resize(self._img, (540, 540))
         self._mask = cv2.resize(self._mask, (540, 540))
 
-        self._shifted = cv2.bitwise_and(translate(self._mask, 50, 0), translate(self._mask, -50, 0))
+        self._shifted = cv2.bitwise_and(translate(self._mask, 40, 30), translate(self._mask, -40, -30))
 
         self._img [self._mask == 0] = 0
 
