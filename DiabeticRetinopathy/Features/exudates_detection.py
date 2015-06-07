@@ -38,8 +38,11 @@ class DetectExudates(object):
         self._processed = self._intensity.copy()
 
     def preprocess(self):
+        # salt & pepper noise at 1%
+        self._processed = salt_and_peper(self._processed)
+
         # median blur with a 3x3 kernel
-        self._processed = cv2.blur(self._processed, (3, 3))
+        self._processed = cv2.medianBlur(self._processed, 3)
 
         # CLAHE
         clahe = cv2.createCLAHE(clipLimit = 3., tileGridSize = (4, 4))
