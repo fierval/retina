@@ -37,7 +37,7 @@ class KNeighborsRegions (object):
 
         self._rects = np.array([])
         self._avg_pixels = np.array([])
-        self._labels = [0, 0, 1, 1, 2, 3, 4]
+        self._labels = [-1, -1, 1, 1, 2, 3, 4]
         
         self._process_annotations()        
 
@@ -146,7 +146,7 @@ class KNeighborsRegions (object):
         im_drusen = im.copy()
         im_bg = im.copy()
 
-        im_drusen [prediction == 0] = [255, 0, 0]
+        im_drusen [prediction == -1] = [255, 0, 0]
         im_bg [prediction == 2] = [0, 255, 0]
         im_bg [mask == 0] = 0
 
@@ -154,7 +154,9 @@ class KNeighborsRegions (object):
 
     def analyze_image(self, im_file):
         '''
-        Load the image and analyze it with FCM
+        Load the image and analyze it with KNN
+
+        im_file - pre-processed with histogram specification
         '''
 
         im_file = path.join(self._root, im_file)
@@ -193,7 +195,7 @@ class KNeighborsRegions (object):
         self.display_current(prediction)
         return prediction
 
-    def refine_prediction(self, orig_im_file, prediction):
+    def _remove_od(self, orig_im_file, prediction):
         # Remove FPs due to OD
         assert(path.exists(orig_im_file)), "Original image does not exist"
         assert (self._image.size > 0), "No image has been analyzed"
@@ -209,8 +211,16 @@ class KNeighborsRegions (object):
 
         # connectivit is 8 neighbors, fill mask with 255
         flags = 8 | ( 255 << 8 ) | cv2.FLOODFILL_FIXED_RANGE
-        cv2.floodFill(prediction, mask, ctr, 255, 0, 0, flags)
+        cv2.floodFill(prediction, mask, ctr, 0, 0, 0, flags)
 
         self.display_current(prediction)        
 
+        return prediction
+
+    def refine_prediction(self, orig_im_file, prediction):
+        '''
+        Removes false-positives
+        orig_im_file - the original imag
+        '''
+        prediction = self._remove_od(orig_im_file, prediction)
         return prediction
