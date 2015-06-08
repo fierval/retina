@@ -57,6 +57,10 @@ class DetectOD(object):
     def processed(self):
         return self._processed
 
+    @property
+    def scale(self):
+        return self._scale
+
     def remove_light_reflex(self):
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         return cv2.morphologyEx(self._processed, cv2.MORPH_OPEN, kernel)
@@ -92,7 +96,7 @@ class DetectOD(object):
 
         return self._processed
 
-    def locate_disk(self):
+    def locate_disk(self, rescale = True):
         self.shade_correct()
         self.apply_morphology()
 
@@ -102,7 +106,7 @@ class DetectOD(object):
         pr[self._shifted == 0] = 0
 
         _, maxCol, _, ctr = cv2.minMaxLoc(pr)
-        return ctr
+        return ctr if not rescale else self._rescale_to_original_mask(ctr)
 
     def show_detected(self, ctr):
         pr = self._processed.copy().astype('uint8')
@@ -115,8 +119,7 @@ class DetectOD(object):
         return (ctr_orig[0], ctr_orig[1])
 
     def mask_off_od(self):
-        ctr = self.locate_disk()
-        ctr_mask = self._rescale_to_original_mask(ctr)
+        ctr_mask = self.locate_disk()
         mask = self._orig_mask
         mask_radius = sqrt(cv2.countNonZero(mask) / math.pi)
         od_radius = int(round(0.22 * mask_radius))

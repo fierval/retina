@@ -26,7 +26,7 @@ def show_images(images,titles=None, scale=1.3):
 # Pyramid Down & blurr
 # Easy-peesy
 def pyr_blurr(image):
-    return cv2.GaussianBlur(cv2.pyrDown(image), (7, 7), 30.)
+    return median_blurr(cv2.pyrDown(image), 5)
 
 def median_blurr(image, size = 7):
     return cv2.medianBlur(image, size)
@@ -36,6 +36,17 @@ def display_contours(image, contours, color = (255, 0, 0), thickness = -1, title
     for i in range(0, len(contours)):
         cv2.drawContours(imShow, contours, i, color, thickness)
     show_images([imShow], scale=0.7, titles=title)
+
+
+def createMask((rows, cols), hull):
+    # black image
+    mask = np.zeros((rows, cols), dtype=np.uint8)
+    # blit our contours onto it in white color
+    cv2.drawContours(mask, [hull], 0, 255, -1)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations = 2)
+    return mask
 
 def find_eye(image, thresh = 4):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -52,13 +63,6 @@ def find_eye(image, thresh = 4):
     hull_contours = cv2.convexHull(np.vstack(np.array(contours)))
     hull = np.vstack(hull_contours)
     
-    def createMask((rows, cols), hull):
-        # black image
-        mask = np.zeros((rows, cols), dtype=np.uint8)
-        # blit our contours onto it in white color
-        cv2.drawContours(mask, [hull], 0, 255, -1)
-        return mask
-
     mask = createMask(image.shape[0:2], hull)
     
     # returning the hull to illustrate a few issues below
@@ -121,9 +125,10 @@ def mask_background(image, mask):
 thresh = 4
 img_path = "/kaggle/retina/train/sample"
 # this is the image into the colors of which we want to map
-ref_image_name = "6535_left.jpeg"
+ref_image_name = "16_left.jpeg"
 # images picked to illustrate different problems arising during algorithm application
-image_names = ["16_left.jpeg", "10130_right.jpeg", "21118_left.jpeg"]
+#image_names = ["16_left.jpeg", "10130_right.jpeg", "21118_left.jpeg"]
+image_names = ["6535_left.jpeg", "10130_right.jpeg", "21118_left.jpeg"]
 
 def pre_process(img_path, image_names, ref_image_name, thresh):
     image_paths = map(lambda t: path.join(img_path, t), image_names)
