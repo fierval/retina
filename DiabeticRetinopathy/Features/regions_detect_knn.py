@@ -37,7 +37,7 @@ class KNeighborsRegions (object):
 
         self._rects = np.array([])
         self._avg_pixels = np.array([])
-        self._labels = [-1, -1, 1, 1, 2, 3, 4]
+        self._labels = [-1, -1, 1, 1, 2, 3, 4, 4, 5]
         
         self._process_annotations()        
 
@@ -151,6 +151,15 @@ class KNeighborsRegions (object):
         im_bg [mask == 0] = 0
 
         show_images([im, im_drusen, im_bg], ["original", "HE/CWS", "HM/MA"], scale = 0.8)
+    
+    def display_camera_artifact(self, prediction):
+        im = self._image
+        mask = self._mask
+        im_camera = im.copy()
+
+        im_camera [prediction == 4] = [255, 0, 0]
+
+        show_images([im, im_camera], ["original", "camera"], scale = 0.8)
 
     def analyze_image(self, im_file):
         '''
@@ -213,7 +222,8 @@ class KNeighborsRegions (object):
         flags = 8 | ( 255 << 8 ) | cv2.FLOODFILL_FIXED_RANGE
         cv2.floodFill(prediction, mask, ctr, 0, 0, 0, flags)
 
-        self.display_current(prediction)        
+        self.display_current(prediction)
+        self.display_camera_artifact(prediction)      
 
         return prediction
 
