@@ -9,32 +9,40 @@ from kobra.tr_utils import append_to_arr
 from kobra.imaging import show_images, pyr_blurr
 
 class KNeighborsClassify (object):
-    def __init__(self, root, annotation_images_dir, annotations, masks_dir):
+    def __init__(self, root, annotations, masks_dir):
         '''
         root - root directory for images
         annotations_images_dir - where annotations images are
         masks_dir - where masks are
         annotations - path to the annotations file
+
+        Images must be pre-processed by FeatureExtractionCpp
         '''
-        self._annotation_images_dir = annotation_images_dir
         self._masks_dir = masks_dir
         self._root = root
-        self._annotations = annotations
+        self._annotations = path.join(self._root, annotations)
+
+        assert(path.exists(self._annotations)), "Annotations file does not exist: " + self._annotations
+
         self._pd_annotations = pd.read_csv(self._annotations, sep= ' ', header = None)
 
+        self._rects = np.array([])
+        self._avg_pixels = None
+        self._labels = [0, 0, 1, 1, 2, 3]
+        
+        self._process_annotations()        
+
+    def _process_annotations(self):
         # files from which annotations were extracted
         self._files = self._pd_annotations[0].as_matrix()
         self._n_files = len(self._files)
 
         # number of rectangles in each file
         self._n_objects = self._pd_annotations[1][0]
-
         rect_frame = self._pd_annotations.ix[:, 2:].as_matrix()
         rows = rect_frame.shape[0]
         rect_frame = np.vsplit(rect_frame, rows)
-        self._rects = np.array([])
-        self._avg_pixels = None
-        
+
         # convert number-by-number columns into rectangles
         for row in rect_frame:
             row = row.reshape(-1)
@@ -120,12 +128,16 @@ class KNeighborsClassify (object):
         Load the image and analyze it with FCM
         '''
 
+        im_file = path.join(self._root, im_file)
+        assert (path.exists(im_file)), "Image file does not exist"
+
         if self._avg_pixels == None:
             self._get_initial_classes()
 
         im_file_name = path.splitext(path.split(im_file)[1])[0]
 
         mask_file = path.join(self._masks_dir, im_file_name + ".png")
+        assert (path.exists(mask_file)), "Mask file does nto exist"
 
         mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
         #mask = pyr_blurr(mask)
@@ -153,8 +165,9 @@ class KNeighborsClassify (object):
         im_bg = im.copy()
 
         im_drusen [prediction == 0] = [255, 0, 0]
-        im_bg [prediction == 1] = [0, 255, 0]
+        im_bg [prediction == -1] = [0, 255, 0]
+        im_bg [mask == 0] = 0
 
-        show_images([im, im_drusen, im_bg], ["original", "disk", "background"], scale = 0.8)
+        show_images([im, im_drusen, im_bg], ["original", "disk", "haem"], scale = 0.8)
 
 

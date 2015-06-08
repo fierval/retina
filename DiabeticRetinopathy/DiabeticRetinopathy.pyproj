@@ -28,7 +28,7 @@
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\knn_classify.py">
+    <Compile Include="Features\regions_detect_knn.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\od_detection.py">

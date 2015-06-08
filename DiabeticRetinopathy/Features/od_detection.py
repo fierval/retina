@@ -41,8 +41,8 @@ class DetectOD(object):
 
         # get green channel
         self._green = self._img[:, :, 1].astype('float32')
-
-        self._kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    
+        # kick-start processing
         self._processed = self._green.copy()
 
     @property
@@ -58,7 +58,8 @@ class DetectOD(object):
         return self._processed
 
     def remove_light_reflex(self):
-        return cv2.morphologyEx(self._processed, cv2.MORPH_OPEN, self._kernel)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        return cv2.morphologyEx(self._processed, cv2.MORPH_OPEN, kernel)
     
     def shade_correct(self):
         gamma = self.remove_light_reflex()

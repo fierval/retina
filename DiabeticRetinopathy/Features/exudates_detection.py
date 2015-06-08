@@ -4,6 +4,7 @@ from kobra.imaging import show_images, salt_and_peper
 import imutils
 import cv2
 from os import path
+from od_detection import DetectOD
 
 class DetectExudates(object):
     '''
@@ -11,23 +12,13 @@ class DetectExudates(object):
     '''
 
     def __init__(self, im_file, mask_dir):
+        self._od_detector = DetectOD(im_file, mask_dir)
 
-        assert (path.exists(im_file)), "Image not found"
-        assert (path.exists(mask_dir)), "Mask not found"
-
-        self._im_name = path.splitext(path.split(im_file)[1])[0]
-        mask_file = path.join(mask_dir, self._im_name + ".png")
-        self._img = cv2.imread(im_file)
-        self._mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
-
-        assert (self._img.size > 0), "Image not found"
-        assert (self._mask.size > 0), "Mask not found"
-        
         # rescale to 256 x 256
-        self._img = cv2.resize(self._img, (256, 256))
-        self._mask = cv2.resize(self._mask, (256, 256))
-
-        self._img [self._mask == 0] = 0
+        self._img = cv2.resize(self._od_detector._img, (256, 256))
+        # mask off OD
+        self._orig_mask = self._od_detector.mask_off_od()
+        self._mask = cv2.resize(self._orig_mask, (256, 256))
 
         # intensity image
         self._img = cv2.cvtColor(self._img, cv2.COLOR_BGR2HLS)
