@@ -25,6 +25,7 @@ class TransformImage
 protected:
     Mat _image;
     Mat _enhanced;
+    Mat _buf;
 
     gpu::GpuMat g_image;
     vector<gpu::GpuMat> g_oneChannel;
@@ -57,20 +58,6 @@ public:
         return g_enhanced;
     }
 
-    void MakeHsv()
-    {
-        g_image.copyTo(g_buf);
-
-        gpu::cvtColor(g_buf, g_image, COLOR_BGR2HSV);
-    }
-
-    void MakeBGR()
-    {
-        g_image.copyTo(g_buf);
-
-        gpu::cvtColor(g_buf, g_image, COLOR_HSV2BGR);
-    }
-
     // apply Gaussian Pyramid scale times
     gpu::GpuMat& PyramidDown(int scale = 1)
     {
@@ -101,6 +88,7 @@ public:
         medianBlur(buf, _enhanced, size);
 
         g_enhanced.upload(_enhanced);
+
         return _enhanced;
     }
 
@@ -108,6 +96,7 @@ public:
     TransformImage(Mat image) : _image(image), g_oneChannel(3)
     {
         g_image.upload(image);
+        g_enhanced.upload(image);
     }
 
     TransformImage() : g_oneChannel(3)
@@ -249,8 +238,26 @@ public:
         }
     }
 
+    gpu::GpuMat& AddSaltAndPepper(float fraction = 0.01)
+    {
+        getEnhanced();
+        Mat noise = Mat::zeros(g_enhanced.rows, g_enhanced.cols, CV_8UC1);
+        randu(noise, 0, 100);
+
+        int totalNoise = (int)std::round(fraction * 100 / 2);
+        Mat black = noise < totalNoise;
+        Mat white = noise > 100 - totalNoise;
+
+        Mat sp = _enhanced.clone();
+        sp.setTo(255, white);
+        sp.setTo(0, black);
+
+        g_enhanced.upload(sp);
+        return g_enhanced;
+    }
+
     // Accessors
-    void setImage(Mat& image) {image.copyTo(_image); g_image.upload(image); }
+    void setImage(Mat& image) { image.copyTo(_image); g_image.upload(image); g_image.copyTo(g_enhanced); }
     Mat& getImage() { return _image; }
     void setChannel(Channels channel) { _channel = channel; }
     Mat& getEnhanced() { g_enhanced.download(_enhanced); return _enhanced; }

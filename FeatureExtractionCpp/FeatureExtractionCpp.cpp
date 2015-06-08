@@ -68,6 +68,8 @@ void CreateMask(HaemoragingImage& hi, int thresh, Mat& mask)
     Size origSize(image.size());
     resize(image, image, Size(256, 256));
     hi.setImage(image);
+    hi.AddSaltAndPepper(0.05f);
+    hi.MedianBlur(3);
 
     do
     {
@@ -134,18 +136,21 @@ void do_debug(CommandLineParser& parser)
     //3. CLAHE
     hi.setImage(dest);
     hi.MaskOffBackground(mask);
-    hi.setImage(hi.getEnhanced());
 
-    hi.MakeHsv();
+    Mat hsv;
+    cvtColor(hi.getEnhanced(), hsv, COLOR_BGR2HSV);
+
+    hi.setImage(hsv);
     hi.GetOneChannelImages(Channels::V);
     hi.ApplyClahe();
-
     dest = hi.getEnhanced();
+    
+    cvtColor(dest, rgb, COLOR_HSV2BGR);
+
     if (size.width > 0)
     {
-        resize(dest, dest, size);
+        resize(rgb, rgb, size);
     }
-    cvtColor(dest, rgb, COLOR_HSV2BGR);
 
     namedWindow(enhancedWindow, WINDOW_NORMAL);
     imshow(enhancedWindow, rgb);
@@ -214,13 +219,18 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
 
         //5. Apply mask to filter background noise
         hi.MaskOffBackground(mask);
-        hi.setImage(hi.getEnhanced());
 
-        hi.MakeHsv();
+        Mat hsv;
+        cvtColor(hi.getEnhanced(), hsv, COLOR_BGR2HSV);
+
+        hi.setImage(hsv);
         hi.GetOneChannelImages(Channels::V);
         hi.ApplyClahe();
-        
-        dest = hi.getEnhanced();
+
+        // 6. covnert to RGB
+        hsv = hi.getEnhanced();
+        cvtColor(hsv, dest, COLOR_HSV2BGR);
+
         if (doResize)
         {
             resize(dest, dest, size, INTER_AREA);
@@ -235,11 +245,8 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
             resize(mask, mask, scaled, INTER_AREA);
         }
 
-        // 6. covnert to RGB
-        cvtColor(dest, rgb, COLOR_HSV2BGR);
-
          // 7. write out
-        imwrite(outFilePath.string(), rgb);
+        imwrite(outFilePath.string(), dest);
         imwrite(maskFilePath.string(), mask);
     }
 }

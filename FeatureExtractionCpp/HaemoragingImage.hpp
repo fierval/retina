@@ -123,7 +123,9 @@ public:
             throw logic_error("Need to compute mask first");
         }
 
-        gpu::GpuMat g_mask(_mask);
-        g_image.copyTo(g_enhanced, g_mask);
+        // copyTo doesn't work well on the GPU
+        Mat buf;
+        _image.copyTo(buf, _mask);
+        g_enhanced.upload(buf);
     }
 };
