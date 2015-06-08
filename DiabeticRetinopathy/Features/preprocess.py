@@ -44,12 +44,13 @@ def createMask((rows, cols), hull):
     # blit our contours onto it in white color
     cv2.drawContours(mask, [hull], 0, 255, -1)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations = 2)
     return mask
 
 def find_eye(image, thresh = 4):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if len(image.shape) > 2:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image
 
     # Canny edge finder
     edges = np.array([])

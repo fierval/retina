@@ -7,15 +7,20 @@ import os
 import shutil
 from kobra.tr_utils import append_to_arr
 from kobra.imaging import show_images, pyr_blurr
-from od_detection import DetectOD
+from kobra import DetectOD
+from kobra import enum
+from kobra.retina import find_eye
 
 root = '/kaggle/retina/train/labelled'
 annotations = 'annotations.txt'
-masks_dir = '/kaggle/retina/train/masks'
+masks_dir = '/kaggle/retina/train/thresh5ref16sc17masks'
 im_file = '4/16_left.jpeg'
 orig_path = '/kaggle/retina/train/sample'
 orig_im_file = path.join(orig_path, '16_left.jpeg')
 
+# annotation labels
+Labels = enum(Drusen = -1, Background = 1, Blood = 2, DeepBlood = 3, CameraHue = 4, Outside = 5)
+ 
 class KNeighborsRegions (object):
     def __init__(self, root, annotations, masks_dir):
         '''
@@ -37,7 +42,8 @@ class KNeighborsRegions (object):
 
         self._rects = np.array([])
         self._avg_pixels = np.array([])
-        self._labels = [-1, -1, 1, 1, 2, 3, 4, 4, 5]
+        self._labels = [Labels.Drusen, Labels.Drusen, Labels.Background, Labels.Background, 
+                        Labels.Blood, Labels.DeepBlood, Labels.CameraHue, Labels.CameraHue, Labels.Outside]
         
         self._process_annotations()        
 
@@ -147,10 +153,10 @@ class KNeighborsRegions (object):
         im_drusen = im.copy()
         im_bg = im.copy()
 
-        im_drusen [prediction == -1] = [255, 0, 0]
+        im_drusen [prediction == Labels.Drusen] = [255, 0, 0]
         if with_camera:
-            im_drusen [prediction == 4] = [255, 0, 0]
-        im_bg [prediction == 2] = [0, 255, 0]
+            im_drusen [prediction == Labels.CameraHue] = [255, 0, 0]
+        im_bg [prediction == Labels.Blood] = [0, 255, 0]
         im_bg [mask == 0] = 0
 
         show_images([im, im_drusen, im_bg], ["original", "HE/CWS", "HM/MA"], scale = 0.8)
@@ -160,7 +166,7 @@ class KNeighborsRegions (object):
         mask = self._mask
         im_camera = im.copy()
 
-        im_camera [prediction == 4] = [255, 0, 0]
+        im_camera [prediction == Labels.CameraHue] = [255, 0, 0]
 
         show_images([im, im_camera], ["original", "camera"], scale = 0.8)
 
@@ -229,10 +235,25 @@ class KNeighborsRegions (object):
 
         return prediction
 
+    def _refine_mask(self, prediction):
+        mask = np.zeros(prediction.shape, np.uint8)
+
+        # this should give us proper contours
+        mask[prediction == Labels.Drusen] = 255
+        mask[prediction == Labels.Background] = 255
+        mask[prediction == Labels.CameraHue] = 255
+
+        #refine prediction
+        mask, _ = find_eye(mask)
+        self._mask = mask
+        prediction[mask == 0] = 0
+        return prediction
+
     def refine_prediction(self, orig_im_file, prediction):
         '''
         Removes false-positives
         orig_im_file - the original imag
         '''
+        prediction = self._refine_mask(prediction)
         prediction = self._remove_od(orig_im_file, prediction)
         return prediction
