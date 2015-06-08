@@ -77,7 +77,8 @@ class KNeighborsRegions (object):
         2 - 3: background (1)
             4: vessels (2)
             5: haemorages (3)
-            6: background (4)  
+            6: background (4) 
+            7: bluish hue at the edges (5) 
         '''
         images = map(lambda f: cv2.imread(path.join(self._root, f)), self._files)
         self._avg_pixels = np.array([], dtype=np.uint8)
@@ -139,7 +140,7 @@ class KNeighborsRegions (object):
         show_images(images)
 
     
-    def display_current(self, prediction):
+    def display_current(self, prediction, with_camera = False):
         # display what we have found
         im = self._image
         mask = self._mask
@@ -147,6 +148,8 @@ class KNeighborsRegions (object):
         im_bg = im.copy()
 
         im_drusen [prediction == -1] = [255, 0, 0]
+        if with_camera:
+            im_drusen [prediction == 4] = [255, 0, 0]
         im_bg [prediction == 2] = [0, 255, 0]
         im_bg [mask == 0] = 0
 
@@ -201,7 +204,7 @@ class KNeighborsRegions (object):
         prediction = clf.predict(im_1d)
         prediction = prediction.reshape(rows, -1)
 
-        self.display_current(prediction)
+        self.display_current(prediction, with_camera = True)
         return prediction
 
     def _remove_od(self, orig_im_file, prediction):
@@ -223,7 +226,6 @@ class KNeighborsRegions (object):
         cv2.floodFill(prediction, mask, ctr, 0, 0, 0, flags)
 
         self.display_current(prediction)
-        self.display_camera_artifact(prediction)      
 
         return prediction
 
