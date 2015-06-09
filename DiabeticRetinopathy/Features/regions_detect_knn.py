@@ -16,14 +16,12 @@ annotations = 'annotations.txt'
 masks_dir = '/kaggle/retina/train/thresh5ref16sc17masks'
 im_file = '4/16_left.jpeg'
 orig_path = '/kaggle/retina/train/sample'
-orig_im = '16_left.jpeg'
-orig_im_file = path.join(orig_path, orig_im)
 
 # annotation labels
-Labels = enum(Drusen = -1, Background = 1, Blood = 2, DeepBlood = 3, CameraHue = 4, Outside = 5)
+Labels = enum(Drusen = -1, Background = 1, Blood = 2, CameraHue = 3, Outside = 4)
  
 class KNeighborsRegions (object):
-    def __init__(self, root, annotations, masks_dir, orig_path):
+    def __init__(self, root, annotations, masks_dir, orig_path, n_neighbors = 3):
         '''
         root - root directory for images
         annotations_images_dir - where annotations images are
@@ -38,6 +36,7 @@ class KNeighborsRegions (object):
         self._root = root
         self._annotations = path.join(self._root, annotations)
         self._image = np.array([])
+        self._n_neighbors = n_neighbors
 
         assert(path.exists(self._annotations)), "Annotations file does not exist: " + self._annotations
         assert(path.exists(self._orig_path)), "Original image path does not exist: " + self._orig_path
@@ -46,7 +45,7 @@ class KNeighborsRegions (object):
         self._rects = np.array([])
         self._avg_pixels = np.array([])
         self._labels = [Labels.Drusen, Labels.Drusen, Labels.Background, Labels.Background, 
-                        Labels.Blood, Labels.DeepBlood, Labels.CameraHue, Labels.CameraHue, Labels.Outside]
+                        Labels.Blood, Labels.Blood, Labels.CameraHue, Labels.CameraHue, Labels.Outside, Labels.Outside]
         
         self._process_annotations()        
 
@@ -83,11 +82,10 @@ class KNeighborsRegions (object):
         Annotations contain:
         position: meaning (label)
         0 - 1: drusen/exudates (0)
-        2 - 3: background (1)
-            4: vessels (2)
-            5: haemorages (3)
-            6: background (4) 
-            7: bluish hue at the edges (5) 
+        2 - 3: texture (1)
+        4 - 5: vessels, aneurisms, haemorages (2)
+        6 - 7: bluish hue at the edges (3)
+        8 - 9 background (4)
         '''
         images = map(lambda f: cv2.imread(path.join(self._root, f)), self._files)
         self._avg_pixels = np.array([], dtype=np.uint8)
@@ -115,10 +113,6 @@ class KNeighborsRegions (object):
             else:
                 self._avg_pixels = np.vstack((self._avg_pixels, mn))
         
-        # append the background pixel
-        self._avg_pixels = np.vstack((self._avg_pixels, np.array([0, 0, 0])))
-            
-
     @property
     def labels(self):
         return self._labels
@@ -138,6 +132,15 @@ class KNeighborsRegions (object):
         show_images(images)
 
     
+    def display_artifact(self, prediction, artifact, color, title):
+        im = self._image
+        mask = self._mask
+        im_art = im.copy()
+
+        im_art [prediction == artifact] = color
+
+        show_images([im, im_art], ["original", title], scale = 0.8)
+
     def display_current(self, prediction, with_camera = False):
         # display what we have found
         im = self._image
@@ -154,13 +157,10 @@ class KNeighborsRegions (object):
         show_images([im, im_drusen, im_bg], ["original", "HE/CWS", "HM/MA"], scale = 0.8)
     
     def display_camera_artifact(self, prediction):
-        im = self._image
-        mask = self._mask
-        im_camera = im.copy()
-
-        im_camera [prediction == Labels.CameraHue] = [255, 0, 0]
-
-        show_images([im, im_camera], ["original", "camera"], scale = 0.8)
+        self.display_artifact(prediction, Labels.CameraHue, (0, 0, 255), "camera")
+    
+    def display_bg(self, prediction):
+        self.display_artifact(prediction, Labels.Background, (0, 0, 255), "background")
 
     def analyze_image(self, im_file):
         '''
@@ -175,7 +175,8 @@ class KNeighborsRegions (object):
         if self._avg_pixels.size == 0:
             self._get_initial_classes()
 
-        im_file_name = path.splitext(path.split(im_file)[1])[0]
+        self._im_file = path.split(im_file)[1]
+        im_file_name = path.splitext(self._im_file)[0]
 
         mask_file = path.join(self._masks_dir, im_file_name + ".png")
         assert (path.exists(mask_file)), "Mask file does nto exist"
@@ -193,7 +194,7 @@ class KNeighborsRegions (object):
         self._image = im
         self._mask = mask
 
-        clf = KNeighborsClassifier(n_neighbors = 3)
+        clf = KNeighborsClassifier(n_neighbors = self._n_neighbors)
         clf.fit(self._avg_pixels, self._labels)
 
         im_1d = im.reshape(-1, 3)
@@ -202,7 +203,7 @@ class KNeighborsRegions (object):
         prediction = clf.predict(im_1d)
         prediction = prediction.reshape(rows, -1)
 
-        self.display_current(prediction, with_camera = True)
+        self.display_current(prediction)
         return prediction
 
     def _remove_od(self, orig_im_file, prediction):
@@ -223,6 +224,11 @@ class KNeighborsRegions (object):
         flags = 8 | ( 255 << 8 ) | cv2.FLOODFILL_FIXED_RANGE
         cv2.floodFill(prediction, mask, ctr, 0, 0, 0, flags)
 
+        im = self._image.copy()
+
+        cv2.circle(im, ctr, 50, (255, 255, 255), 5)
+        show_images([im])
+
         self.display_current(prediction)
 
         return prediction
@@ -234,6 +240,7 @@ class KNeighborsRegions (object):
         mask[prediction == Labels.Drusen] = 255
         mask[prediction == Labels.Background] = 255
         mask[prediction == Labels.CameraHue] = 255
+        mask[prediction == Labels.Blood] = 255
 
         #refine prediction
         mask, _ = find_eye(mask)
@@ -241,11 +248,13 @@ class KNeighborsRegions (object):
         prediction[mask == 0] = 0
         return prediction
 
-    def refine_prediction(self, orig_im_file, prediction):
+    def refine_prediction(self, prediction):
         '''
         Removes false-positives
         orig_im_file - the original imag
         '''
+
+        orig_im_file = path.join(self._orig_path, self._im_file)
         prediction = self._refine_mask(prediction)
         prediction = self._remove_od(orig_im_file, prediction)
         return prediction
