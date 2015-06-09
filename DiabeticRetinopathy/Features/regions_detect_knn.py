@@ -19,7 +19,21 @@ orig_path = '/kaggle/retina/train/sample'
 
 # annotation labels
 Labels = enum(Drusen = -1, Background = 1, Blood = 2, CameraHue = 3, Outside = 4)
- 
+
+def merge_annotations(a1_file, a2_file, out_file = None):
+    if out_file == None: out_file = a1_file
+    a1 = pd.read_csv(a1_file, sep = ' ', header = None)
+    a2 = pd.read_csv(a2_file, sep = ' ', header = None)
+
+    #number of new objects
+    new_obj = a2[1][0]
+    del a2[1]
+
+    out = pd.merge(a1, a2, on = 0)
+    out[1] += new_obj
+
+    out.to_csv(out_file, sep = ' ', header = None, index = False)
+     
 class KNeighborsRegions (object):
     def __init__(self, root, annotations, masks_dir, orig_path, n_neighbors = 3):
         '''
