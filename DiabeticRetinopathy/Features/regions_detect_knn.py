@@ -16,28 +16,31 @@ annotations = 'annotations.txt'
 masks_dir = '/kaggle/retina/train/thresh5ref16sc17masks'
 im_file = '4/16_left.jpeg'
 orig_path = '/kaggle/retina/train/sample'
-orig_im_file = path.join(orig_path, '16_left.jpeg')
+orig_im = '16_left.jpeg'
+orig_im_file = path.join(orig_path, orig_im)
 
 # annotation labels
 Labels = enum(Drusen = -1, Background = 1, Blood = 2, DeepBlood = 3, CameraHue = 4, Outside = 5)
  
 class KNeighborsRegions (object):
-    def __init__(self, root, annotations, masks_dir):
+    def __init__(self, root, annotations, masks_dir, orig_path):
         '''
         root - root directory for images
         annotations_images_dir - where annotations images are
         masks_dir - where masks are
         annotations - path to the annotations file
+        orig_path - path to the original (unprocessed) files
 
         Images must be pre-processed by FeatureExtractionCpp
         '''
         self._masks_dir = masks_dir
+        self._orig_path = orig_path
         self._root = root
         self._annotations = path.join(self._root, annotations)
         self._image = np.array([])
 
         assert(path.exists(self._annotations)), "Annotations file does not exist: " + self._annotations
-
+        assert(path.exists(self._orig_path)), "Original image path does not exist: " + self._orig_path
         self._pd_annotations = pd.read_csv(self._annotations, sep= ' ', header = None)
 
         self._rects = np.array([])
@@ -120,17 +123,6 @@ class KNeighborsRegions (object):
     def labels(self):
         return self._labels
 
-    @labels.setter
-    def labels(self, val):
-        self._labels = val
-
-    @staticmethod
-    def flip(rect):
-        '''
-        useful for converting between (pt1, pt2) and row x col representations of rectangles
-        '''
-        return rect[1], rect[0], rect[3], rect[2]
-    
     def display_average_pixels(self):
         if self._avg_pixels == None:
             self._get_initial_classes()
