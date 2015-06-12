@@ -18,7 +18,8 @@ im_file = '4/16_left.jpeg'
 orig_path = '/kaggle/retina/train/sample'
 
 # annotation labels
-Labels = enum(Drusen = -1, Background = 1, Blood = 2, CameraHue = 3, Outside = 4)
+# Bright and Dark used for MA and HA annotations
+Labels = enum(Drusen = -1, Background = 1, Blood = 2, CameraHue = 3, Outside = 4, OD = 5, Bright = 6, Dark = 7)
 
 def merge_annotations(a1_file, a2_file, out_file = None):
     if out_file == None: out_file = a1_file
@@ -38,7 +39,6 @@ class KNeighborsRegions (object):
     def __init__(self, root, annotations, masks_dir, orig_path, n_neighbors = 3):
         '''
         root - root directory for images
-        annotations_images_dir - where annotations images are
         masks_dir - where masks are
         annotations - path to the annotations file
         orig_path - path to the original (unprocessed) files
@@ -54,12 +54,13 @@ class KNeighborsRegions (object):
 
         assert(path.exists(self._annotations)), "Annotations file does not exist: " + self._annotations
         assert(path.exists(self._orig_path)), "Original image path does not exist: " + self._orig_path
+        assert(path.exists(self._masks_dir)), "Masks path does not exist: " + self._masks_dir
+
         self._pd_annotations = pd.read_csv(self._annotations, sep= ' ', header = None)
 
         self._rects = np.array([])
         self._avg_pixels = np.array([])
-        self._labels = [Labels.Drusen, Labels.Drusen, Labels.Background, Labels.Background, 
-                        Labels.Blood, Labels.Blood, Labels.CameraHue, Labels.CameraHue, Labels.Outside, Labels.Outside]
+        self._labels = None
         
         self._process_annotations()        
 
@@ -131,6 +132,10 @@ class KNeighborsRegions (object):
     def labels(self):
         return self._labels
 
+    @labels.setter
+    def labels(self, val):
+        self._labels = val
+
     def display_average_pixels(self):
         if self._avg_pixels == None:
             self._get_initial_classes()
@@ -156,19 +161,7 @@ class KNeighborsRegions (object):
         show_images([im, im_art], ["original", title], scale = 0.8)
 
     def display_current(self, prediction, with_camera = False):
-        # display what we have found
-        im = self._image
-        mask = self._mask
-        im_drusen = im.copy()
-        im_bg = im.copy()
-
-        im_drusen [prediction == Labels.Drusen] = [255, 0, 0]
-        if with_camera:
-            im_drusen [prediction == Labels.CameraHue] = [255, 0, 0]
-        im_bg [prediction == Labels.Blood] = [0, 255, 0]
-        im_bg [mask == 0] = 0
-
-        show_images([im, im_drusen, im_bg], ["original", "HE/CWS", "HM/MA"], scale = 0.8)
+        pass
     
     def display_camera_artifact(self, prediction):
         self.display_artifact(prediction, Labels.CameraHue, (0, 0, 255), "camera")
@@ -239,9 +232,6 @@ class KNeighborsRegions (object):
         cv2.floodFill(prediction, mask, ctr, 0, 0, 0, flags)
 
         im = self._image.copy()
-
-        cv2.circle(im, ctr, 50, (255, 255, 255), 5)
-        show_images([im])
 
         self.display_current(prediction)
 

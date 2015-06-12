@@ -44,8 +44,8 @@ def sample_files(labels, size, inp_path, out_path):
         copy(src, dst)
 
 labels_file = "/Kaggle/Retina/trainLabels.csv"    
-inp_path = "/Kaggle/retina/train/thresh5ref16sc17"
-out_path = "/Kaggle/retina/train/labelled"
+inp_path = "/Kaggle/retina/train/thresh5ref6535sc17"
+out_path = "/Kaggle/retina/train/labelled_1"
 
 def copy_files_to_label_dirs(inp_path, out_path, labels_file, process = None):
     prep_out_path(out_path)
