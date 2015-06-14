@@ -12,6 +12,7 @@ class DrusenDetect(KNeighborsRegions):
 
     def display_current(self, prediction, with_camera = False):
         self.display_artifact(prediction, Labels.Drusen, (0, 255, 0), "Drusen")
+        self.display_artifact(prediction, Labels.Background, (0, 0, 255), "Haemorages")
 
 class HaemDetect(KNeighborsRegions):
     def __init__(self, root, annotations, masks_dir, orig_path, n_neighbors = 3):

@@ -11,12 +11,6 @@ from kobra import DetectOD
 from kobra import enum
 from kobra.retina import find_eye
 
-root = '/kaggle/retina/train/labelled'
-annotations = 'annotations.txt'
-masks_dir = '/kaggle/retina/train/thresh5ref16sc17masks'
-im_file = '4/16_left.jpeg'
-orig_path = '/kaggle/retina/train/sample'
-
 # annotation labels
 # Bright and Dark used for MA and HA annotations
 Labels = enum(Drusen = -1, Background = 1, Blood = 2, CameraHue = 3, Outside = 4, OD = 5, Bright = 6, Dark = 7)

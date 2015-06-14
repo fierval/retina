@@ -22,10 +22,16 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Features\artifacts_detector_combined.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Features\exudates_detection.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\findEye.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Features\knn_detectors.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\regions_detect_knn.py">
@@ -54,11 +60,13 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Features\KNN\" />
     <Folder Include="Learning\" />
     <Folder Include="Features\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="annotations.txt" />
+    <Content Include="annotations_blood.txt" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
