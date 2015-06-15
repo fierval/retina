@@ -75,7 +75,7 @@ def preprocess(root, im_file, masks_dir):
     scale = im.shape[1], im.shape[0]
     mask = cv2.resize(mask, scale)
 
-    #im[mask == 0] = 0
+    im[mask == 0] = 0
 
     # grayscale
     im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -90,13 +90,15 @@ def preprocess(root, im_file, masks_dir):
     im_haar = wp['a'].data
 
     # Matched Filter Response
-    K = matched_filter_kernel(31, 5)
+    K = matched_filter_kernel(31, 7)
     kernels = createMatchedFilterBank(K, 12)
     im_matched = applyFilters(im_haar, kernels)
-    kernels = gabor_filters(13, n = 12, sigma = 4.5)
+    kernels = gabor_filters(13, n = 12, sigma = 4.5, lmbda = 10.0)
     im_matched = applyFilters(im_matched, kernels)
     im_norm = cv2.normalize(im_matched, alpha = 0, beta = 1, norm_type = cv2.NORM_MINMAX)
-#    mask = cv2.resize(mask, (im_norm.shape[1], im_norm.shape[0]))
-#    im_norm [mask == 0] = 0
+    mask = cv2.resize(mask, (im_norm.shape[1], im_norm.shape[0]))
+    im_norm [mask == 0] = 0
 
+    # show the results
+    show_images([im_gray, im_haar, im_norm], titles = ["gray", "haar", "filtered"])
     return im_norm
