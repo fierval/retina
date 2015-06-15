@@ -7,7 +7,7 @@
     <ProjectHome>.</ProjectHome>
     <StartupFile>
     </StartupFile>
-    <SearchPath>Features\;Learning\</SearchPath>
+    <SearchPath>Features\;Learning\;Features\KNN\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DiabeticRetinopathy</Name>
@@ -22,7 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Features\artifacts_detector_combined.py">
+    <Compile Include="Features\KNN\artifacts_detector_combined.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\exudates_detection.py">
@@ -31,10 +31,10 @@
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\knn_detectors.py">
+    <Compile Include="Features\KNN\knn_detectors.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\regions_detect_knn.py">
+    <Compile Include="Features\KNN\regions_detect_knn.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\od_detection.py">
@@ -49,6 +49,9 @@
     <Compile Include="Features\preprocess.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Features\SVM\regions_detect_svm.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Learning\environment.py">
       <SubType>Code</SubType>
     </Compile>
@@ -61,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Features\KNN\" />
+    <Folder Include="Features\SVM\" />
     <Folder Include="Learning\" />
     <Folder Include="Features\" />
   </ItemGroup>
