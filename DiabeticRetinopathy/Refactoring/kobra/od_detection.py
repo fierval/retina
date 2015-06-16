@@ -2,7 +2,7 @@ import cv2
 import pandas as pd
 import numpy as np
 from kobra.imaging import show_images
-from kobra import ImageReader
+from kobra.image_reader import ImageReader
 from os import path
 from imutils import translate
 
@@ -101,7 +101,11 @@ class DetectOD(object):
         pr[self._shifted == 0] = 0
 
         _, maxCol, _, ctr = cv2.minMaxLoc(pr)
-        return ctr if not rescale else self._rescale_to_original_mask(ctr)
+        if rescale:
+            x, y = self._rescale_to_original_mask(ctr)
+            ctr = (int(x), int(y))
+
+        return ctr
 
     def show_detected(self, ctr):
         pr = self._processed.copy().astype('uint8')
