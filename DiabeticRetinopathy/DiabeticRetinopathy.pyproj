@@ -22,6 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Features\Blood\blood_detection.py" />
     <Compile Include="Features\KNN\artifacts_detector_combined.py">
       <SubType>Code</SubType>
     </Compile>
@@ -49,9 +50,6 @@
     <Compile Include="Features\preprocess.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\SVM\regions_detect_svm.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Learning\environment.py">
       <SubType>Code</SubType>
     </Compile>
@@ -64,7 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Features\KNN\" />
-    <Folder Include="Features\SVM\" />
+    <Folder Include="Features\Blood\" />
     <Folder Include="Learning\" />
     <Folder Include="Features\" />
   </ItemGroup>
