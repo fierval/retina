@@ -7,10 +7,15 @@ import shutil
 from kobra.imaging import show_images
 import pywt
 from numbapro import vectorize
+import mahotas as mh
 
 root = '/kaggle/retina/train/sample/split'
 im_file = '3/27224_right.jpeg'
 masks_dir = '/kaggle/retina/train/masks'
+
+def remove_light_reflex(im):
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    return cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
 
 def matched_filter_kernel(L, sigma):
     '''
@@ -39,7 +44,7 @@ def createMatchedFilterBank(K, n = 12):
     Given a kernel, create matched filter bank
     '''
 
-    rotate = 360 / n
+    rotate = 180 / n
     center = (K.shape[0] / 2, K.shape[1] / 2)
     cur_rot = 0
     kernels = [K]
@@ -64,6 +69,14 @@ def gabor_filters(ksize, sigma = 4.0, lmbda = 10.0, n = 16):
         filters.append(kern)
     return filters
 
+def get_mask(im, im_file, masks_dir):
+    mask_file = path.join(masks_dir, path.splitext(path.split(im_file)[1])[0] + ".png")
+    
+    mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
+    scale = im.shape[1], im.shape[0]
+    mask = cv2.resize(mask, scale)
+    return mask
+
 def preprocess(root, im_file, masks_dir):
     im_path = path.join(root, im_file) 
 
@@ -73,15 +86,15 @@ def preprocess(root, im_file, masks_dir):
     
     mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
     scale = im.shape[1], im.shape[0]
-    mask = cv2.resize(mask, scale)
+    mask = get_mask(im, im_file, masks_dir)
 
     im[mask == 0] = 0
 
-    # grayscale
-    im_gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    # green channel & remove light reflex
+    im_gray = remove_light_reflex(im[:, :, 1])
 
     # CLAHE
-    clahe = cv2.createCLAHE(4, (5, 5))
+    clahe = cv2.createCLAHE(3, (7, 7))
     im_clahe = clahe.apply(im_gray)
 
     # Haar transform
@@ -95,10 +108,48 @@ def preprocess(root, im_file, masks_dir):
     im_matched = applyFilters(im_haar, kernels)
     kernels = gabor_filters(13, n = 12, sigma = 4.5, lmbda = 10.0)
     im_matched = applyFilters(im_matched, kernels)
-    im_norm = cv2.normalize(im_matched, alpha = 0, beta = 1, norm_type = cv2.NORM_MINMAX)
-    mask = cv2.resize(mask, (im_norm.shape[1], im_norm.shape[0]))
+    mask = cv2.resize(mask, (im_matched.shape[1], im_matched.shape[0]))
+    im_norm = cv2.normalize(im_matched, alpha = 0, beta = 255, norm_type = cv2.NORM_MINMAX).astype('uint8')
     im_norm [mask == 0] = 0
 
     # show the results
-    show_images([im_gray, im_haar, im_norm], titles = ["gray", "haar", "filtered"])
+    show_images([im])
+    show_images([im_gray, im_haar], titles = ["gray", "haar"])
+    show_images([im_norm], titles = ["filtered"])
+
     return im_norm
+
+def extract_blood_vessels(im_norm, im_file, masks_dir):
+    '''
+    Extracts blood vessels. 
+
+    im_norm - output of preprocess()
+    '''
+    mask = get_mask(im_norm, im_file, masks_dir)
+    thresh, _, _, _ = cv2.mean(im_norm, mask)
+
+    # computes vessel regions with mahotas distance function
+    Bc = np.ones((3, 3))
+    threshed = (im_norm > thresh)
+    distances = mh.stretch(mh.distance(threshed))
+    _, im = cv2.threshold(distances, 0, 255, cv2.THRESH_BINARY)
+    
+    # erode/dilate 
+    im = remove_light_reflex(im)
+    im = remove_light_reflex(im)
+    
+    # label and remove the region of the largest size
+    markers, n_markers = mh.label(im)
+
+    # sizes without the background region
+    sizes = mh.labeled.labeled_size(markers)[1:]
+
+    # vessels region is the one with the largest area
+    # since we have removed background region "0", add 1
+    vessels_label = np.argmax(sizes) + 1
+
+    markers[ markers != vessels_label] = 0
+  
+    show_images([markers], titles = ["vessels"])
+
+    return markers
