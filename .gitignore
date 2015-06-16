@@ -66,4 +66,12 @@ target/
 *.user
 ipch/
 OpenCVSamples/
-/DiabeticRetinopathy/.spyderproject
+.spyderproject
+.spyderworkspace
+*.opensdf
+*.egg
+
+#packages
+build/
+dist/
+*.egg/

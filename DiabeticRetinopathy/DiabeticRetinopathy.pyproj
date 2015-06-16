@@ -26,9 +26,6 @@
     <Compile Include="Features\KNN\artifacts_detector_combined.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\exudates_detection.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
