@@ -13,6 +13,10 @@ root = '/kaggle/retina/train/sample/split'
 im_file = '3/27224_right.jpeg'
 masks_dir = '/kaggle/retina/train/masks'
 
+'''
+Based on: http://ictactjournals.in/paper/IJSCPaper_1_563to575.pdf
+'''
+
 def remove_light_reflex(im):
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     return cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
