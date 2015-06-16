@@ -102,10 +102,12 @@ def preprocess(root, im_file, masks_dir):
     wp.decompose()
     im_haar = wp['a'].data
 
-    # Matched Filter Response
+    # Matched filter response
     K = matched_filter_kernel(31, 7)
     kernels = createMatchedFilterBank(K, 12)
     im_matched = applyFilters(im_haar, kernels)
+
+    # Gabor filter response
     kernels = gabor_filters(13, n = 12, sigma = 4.5, lmbda = 10.0)
     im_matched = applyFilters(im_matched, kernels)
     mask = cv2.resize(mask, (im_matched.shape[1], im_matched.shape[0]))
