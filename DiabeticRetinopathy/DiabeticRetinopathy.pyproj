@@ -38,9 +38,6 @@
     <Compile Include="Features\KNN\regions_detect_knn.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\od_detection.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Features\opencv_feats.py">
       <SubType>Code</SubType>
     </Compile>
