@@ -24,14 +24,13 @@ class ImageReader(object):
         mask_file = path.join(self._masks_dir, path.splitext(path.split(self._im_file)[1])[0] + ".png")
         assert (path.exists(mask_file)), "Mask does not exist"    
 
-        mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
-        scale = self._image.shape[1], self._image.shape[0]
-        mask = cv2.resize(mask, scale)
-        return mask
+        self._mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
+        return self.rescale_mask(self._image)
 
     def rescale_mask(self, image):
         scale = image.shape[1], image.shape[0]
-        mask = cv2.resize(mask, scale)
+        self._mask = cv2.resize(self._mask, scale)
+        return self._mask
 
     @property
     def mask(self):

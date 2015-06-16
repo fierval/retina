@@ -3,6 +3,8 @@ from os import path
 import numpy as np
 import cv2
 import pandas as pd
+from math import exp
+from numbapro import vectorize
 
 
 def show_images(images,titles=None, scale=1.3):
@@ -52,8 +54,7 @@ def salt_and_peper(im, fraction = 0.01):
     im_sp [sp > 100 - percent] = 255
     return im_sp
 
-def remove_light_reflex(self):
-    im = self._image
+def remove_light_reflex(im):
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     return cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
 

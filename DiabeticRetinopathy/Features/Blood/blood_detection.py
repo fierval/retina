@@ -6,7 +6,6 @@ import os
 import shutil
 from kobra.imaging import *
 import pywt
-from numbapro import vectorize
 import mahotas as mh
 from kobra import ImageReader
 
@@ -21,6 +20,8 @@ class ExtractBloodVessels(object):
     '''
     def __init__(self, root, im_file, masks_dir):
         self._reader = ImageReader(root, im_file, masks_dir)
+
+        # keep green channel
         self._image = self._reader.image[:, :, 1].copy()
         self._mask = self._reader.mask
 
@@ -29,7 +30,7 @@ class ExtractBloodVessels(object):
         mask = self._mask
 
         # green channel & remove light reflex
-        im_gray = remove_light_reflex(im[:, :, 1])
+        im_gray = remove_light_reflex(im)
 
         # CLAHE
         clahe = cv2.createCLAHE(3, (7, 7))
@@ -53,13 +54,13 @@ class ExtractBloodVessels(object):
         im_norm [mask == 0] = 0
 
         # show the results
-        show_images([im])
+        show_images([self._reader.image])
         show_images([im_gray, im_haar], titles = ["gray", "haar"])
         show_images([im_norm], titles = ["filtered"])
 
         return im_norm
 
-    def extract_blood_vessels(im_norm, im_file, masks_dir):
+    def extract_blood_vessels(self, im_norm):
         mask = self._reader.rescale_mask(im_norm)
         thresh, _, _, _ = cv2.mean(im_norm, mask)
 
@@ -92,4 +93,5 @@ class ExtractBloodVessels(object):
 
         # mask out the markers
         mask [markers != 0] = 0
-        return markers, mask
+        self._mask = mask
+        return markers
