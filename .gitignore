@@ -74,4 +74,4 @@ OpenCVSamples/
 #packages
 build/
 dist/
-*.egg/
+*.egg-info/
