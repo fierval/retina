@@ -10,6 +10,7 @@ from kobra.imaging import show_images, pyr_blurr
 from kobra import DetectOD
 from kobra import enum
 from kobra.retina import find_eye
+from image_reader import ImageReader
 
 # annotation labels
 # Bright and Dark used for MA and HA annotations
@@ -30,7 +31,7 @@ def merge_annotations(a1_file, a2_file, out_file = None):
     out.to_csv(out_file, sep = ' ', header = None, index = False)
      
 class KNeighborsRegions (object):
-    def __init__(self, root, annotations, masks_dir, orig_path, n_neighbors = 3):
+    def __init__(self, root, im_file, annotations, masks_dir, n_neighbors = 3):
         '''
         root - root directory for images
         masks_dir - where masks are
@@ -39,16 +40,15 @@ class KNeighborsRegions (object):
 
         Images must be pre-processed by FeatureExtractionCpp
         '''
-        self._masks_dir = masks_dir
-        self._orig_path = orig_path
-        self._root = root
+        self._reader = ImageReader(root, im_file, masks_dir)
+
         self._annotations = path.join(self._root, annotations)
-        self._image = np.array([])
+        self._image = self._reader.image
+        self._mask = self._reader.mask
+
         self._n_neighbors = n_neighbors
 
         assert(path.exists(self._annotations)), "Annotations file does not exist: " + self._annotations
-        assert(path.exists(self._orig_path)), "Original image path does not exist: " + self._orig_path
-        assert(path.exists(self._masks_dir)), "Masks path does not exist: " + self._masks_dir
 
         self._pd_annotations = pd.read_csv(self._annotations, sep= ' ', header = None)
 
@@ -163,37 +163,18 @@ class KNeighborsRegions (object):
     def display_bg(self, prediction):
         self.display_artifact(prediction, Labels.Background, (0, 0, 255), "background")
 
-    def analyze_image(self, im_file):
+    def analyze_image(self):
         '''
         Load the image and analyze it with KNN
 
         im_file - pre-processed with histogram specification
         '''
 
-        im_file = path.join(self._root, im_file)
-        assert (path.exists(im_file)), "Image file does not exist"
-
         if self._avg_pixels.size == 0:
             self._get_initial_classes()
 
-        self._im_file = path.split(im_file)[1]
-        im_file_name = path.splitext(self._im_file)[0]
-
-        mask_file = path.join(self._masks_dir, im_file_name + ".png")
-        assert (path.exists(mask_file)), "Mask file does nto exist"
-
-        mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
-
         mask [ mask != 0 ] = 255
         rows = mask.shape[0]
-
-        im = cv2.imread(im_file)
-
-        assert (im.shape[0] == rows), "Rows don't match between mask and image"
-
-        im [ mask == 0] = 0
-        self._image = im
-        self._mask = mask
 
         clf = KNeighborsClassifier(n_neighbors = self._n_neighbors)
         clf.fit(self._avg_pixels, self._labels)

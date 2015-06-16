@@ -5,6 +5,8 @@ from kobra.imaging import show_images
 from os import path
 from imutils import translate
 
+from image_reader import ImageReader
+
 class DetectOD(object):
     '''
     Detecting location of the optic disk (OD)
@@ -15,19 +17,12 @@ class DetectOD(object):
     Image masks should be extracted prior to using this class and placed in mask_dir.
     These masks are detected locations of the actual eye in the image being processed 
     '''
-    def __init__(self, im_file, mask_dir):
+    def __init__(self, root, im_file, mask_dir):
 
-        assert (path.exists(im_file)), "Image not found"
-        assert (path.exists(mask_dir)), "Mask not found"
-
-        self._im_name = path.splitext(path.split(im_file)[1])[0]
-        self._mask_file = path.join(mask_dir, self._im_name + ".png")
-        self._img = cv2.imread(im_file)
-        self._orig_mask = cv2.imread(self._mask_file, cv2.IMREAD_GRAYSCALE)
-
-        assert (self._img.size > 0), "Image not found"
-        assert (self._orig_mask.size > 0), "Mask not found"
-        
+        self._reader = ImageReader(root, im_file, mask_dir)
+        self._img = self._reader.image
+        self._mask = self._reader.mask
+                
         self._img = cv2.resize(self._img, (540, 540))
         
         self._scale = np.float32(self._orig_mask.shape) / 540.
