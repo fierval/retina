@@ -1,5 +1,5 @@
 import numpy as np
-from regions_detect_knn import KNeighborsRegions, Labels
+from blood_detection import KNeighborsRegions, Labels
 from kobra import enum
 
 root = '/kaggle/retina/train/labelled'

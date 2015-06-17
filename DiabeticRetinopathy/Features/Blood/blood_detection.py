@@ -7,23 +7,22 @@ import shutil
 from kobra.imaging import *
 import pywt
 import mahotas as mh
-from kobra import ImageReader
+from kobra.dr import ImageProcessor
 
 root = '/kaggle/retina/train/sample/split'
 im_file = '3/27224_right.jpeg'
 masks_dir = '/kaggle/retina/train/masks'
 
 
-class ExtractBloodVessels(object):
+class ExtractBloodVessels(ImageProcessor):
     '''
     Loosely based on: http://ictactjournals.in/paper/IJSCPaper_1_563to575.pdf
     '''
     def __init__(self, root, im_file, masks_dir):
-        self._reader = ImageReader(root, im_file, masks_dir)
+        ImageProcessor.__init__(self, root, im_file, masks_dir)
 
         # keep green channel
-        self._image = self._reader.image[:, :, 1].copy()
-        self._mask = self._reader.mask
+        self._image = self.image[:, :, 1].copy()
 
     def preprocess(self):
         im = self._image

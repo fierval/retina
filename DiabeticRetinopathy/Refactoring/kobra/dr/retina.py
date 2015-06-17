@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from imaging import show_images
+from kobra.imaging import show_images
 
 def display_contours(image, contours, color = (255, 0, 0), thickness = -1, title = None):
     imShow = image.copy()

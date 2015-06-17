@@ -7,9 +7,9 @@ import os
 import shutil
 from kobra.tr_utils import append_to_arr
 from kobra.imaging import show_images, pyr_blurr
-from kobra import DetectOD, ImageReader
 from kobra import enum
-from kobra.retina import find_eye
+from kobra.dr.retina import find_eye
+from kobra.dr import ImageProcessor
 
 # annotation labels
 # Bright and Dark used for MA and HA annotations
@@ -32,7 +32,7 @@ def merge_annotations(a1_file, a2_file, out_file = None):
 
     out.to_csv(out_file, sep = ' ', header = None, index = False)
      
-class KNeighborsRegions (object):
+class KNeighborsRegions (ImageProcessor):
     def __init__(self, root, im_file, annotations, masks_dir, n_neighbors = 3):
         '''
         root - root directory for images
@@ -43,7 +43,7 @@ class KNeighborsRegions (object):
         Images must be pre-processed by FeatureExtractionCpp
         '''
 
-        self._reader = ImageReader(root, im_file, masks_dir)
+        ImageProcessor.__init__(self, root, im_file, masks_dir)
         self._root = root
 
         self._annotations = path.join(root, annotations)
@@ -183,52 +183,16 @@ class KNeighborsRegions (object):
         self.display_current(prediction)
         return prediction
 
-    def _remove_od(self, orig_im_file, prediction):
-        # Remove FPs due to OD
-        assert(path.exists(orig_im_file)), "Original image does not exist"
-        assert (self._image.size > 0), "No image has been analyzed"
+    def _flood_fill(self, ctr, labels, deltaLow = 0, deltaHigh = 0):
 
-        # detect the OD and rescale 
-        od = DetectOD(orig_im_file, self._masks_dir)
-        ctr = od.locate_disk()
-
-        # flood-fill to mask off the disk. The mask needs to be 2 pixels
-        # larger than the image
+        # The mask needs to be 2 pixels larger than the image
         h, w = self._mask.shape[0] + 2, self._mask.shape[1] + 2
         mask = cv2.bitwise_not(cv2.resize(self._mask, (w, h)))
 
-        # connectivit is 8 neighbors, fill mask with 255
+        # connectivity is 8 neighbors, fill mask with 255
         flags = 8 | ( 255 << 8 ) | cv2.FLOODFILL_FIXED_RANGE
         cv2.floodFill(prediction, mask, ctr, 0, 0, 0, flags)
 
-        im = self._image.copy()
+        self.display_current(labels)
 
-        self.display_current(prediction)
-
-        return prediction
-
-    def _refine_mask(self, prediction):
-        mask = np.zeros(prediction.shape, np.uint8)
-
-        # this should give us proper contours
-        mask[prediction == Labels.Drusen] = 255
-        mask[prediction == Labels.Background] = 255
-        mask[prediction == Labels.CameraHue] = 255
-        mask[prediction == Labels.Blood] = 255
-
-        #refine prediction
-        mask, _ = find_eye(mask)
-        self._mask = mask
-        prediction[mask == 0] = 0
-        return prediction
-
-    def refine_prediction(self, prediction):
-        '''
-        Removes false-positives
-        orig_im_file - the original imag
-        '''
-
-        orig_im_file = path.join(self._orig_path, self._im_file)
-        prediction = self._refine_mask(prediction)
-        prediction = self._remove_od(orig_im_file, prediction)
-        return prediction
+        return labels

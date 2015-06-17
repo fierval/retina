@@ -7,7 +7,7 @@
     <ProjectHome>.</ProjectHome>
     <StartupFile>
     </StartupFile>
-    <SearchPath>Features\;Learning\;Features\KNN\</SearchPath>
+    <SearchPath>Features\;Learning\;Features\DarkBright\;Features\Blood\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DiabeticRetinopathy</Name>
@@ -28,7 +28,7 @@
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\pick_files_of_class.py">
+    <Compile Include="Refactoring\kobra\dr\image_processor.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\preprocess.py">
@@ -43,18 +43,13 @@
     <Compile Include="Learning\gradient_boosting.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Refactoring\build\lib\kobra\image_reader.py" />
-    <Compile Include="Refactoring\build\lib\kobra\imaging.py" />
-    <Compile Include="Refactoring\build\lib\kobra\od_detection.py" />
-    <Compile Include="Refactoring\build\lib\kobra\retina.py" />
-    <Compile Include="Refactoring\build\lib\kobra\SupervisedLearning.py" />
-    <Compile Include="Refactoring\build\lib\kobra\train_files.py" />
-    <Compile Include="Refactoring\build\lib\kobra\tr_utils.py" />
-    <Compile Include="Refactoring\build\lib\kobra\__init__.py" />
-    <Compile Include="Refactoring\kobra\image_reader.py" />
+    <Compile Include="Refactoring\kobra\dr\image_reader.py" />
+    <Compile Include="Refactoring\kobra\dr\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Refactoring\kobra\imaging.py" />
-    <Compile Include="Refactoring\kobra\od_detection.py" />
-    <Compile Include="Refactoring\kobra\retina.py" />
+    <Compile Include="Refactoring\kobra\dr\od_detection.py" />
+    <Compile Include="Refactoring\kobra\dr\retina.py" />
     <Compile Include="Refactoring\kobra\SupervisedLearning.py" />
     <Compile Include="Refactoring\kobra\train_files.py" />
     <Compile Include="Refactoring\kobra\tr_utils.py" />
@@ -67,22 +62,12 @@
     <Folder Include="Learning\" />
     <Folder Include="Features\" />
     <Folder Include="Refactoring\" />
-    <Folder Include="Refactoring\build\" />
-    <Folder Include="Refactoring\build\lib\" />
-    <Folder Include="Refactoring\build\lib\kobra\" />
-    <Folder Include="Refactoring\dist\" />
-    <Folder Include="Refactoring\kobra.egg-info\" />
     <Folder Include="Refactoring\kobra\" />
+    <Folder Include="Refactoring\kobra\dr\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="annotations.txt" />
     <Content Include="annotations_blood.txt" />
-    <Content Include="Refactoring\dist\kobra-0.1-py2.7.egg" />
-    <Content Include="Refactoring\kobra.egg-info\dependency_links.txt" />
-    <Content Include="Refactoring\kobra.egg-info\not-zip-safe" />
-    <Content Include="Refactoring\kobra.egg-info\PKG-INFO" />
-    <Content Include="Refactoring\kobra.egg-info\SOURCES.txt" />
-    <Content Include="Refactoring\kobra.egg-info\top_level.txt" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
