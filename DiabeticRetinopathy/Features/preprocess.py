@@ -3,40 +3,7 @@ from os import path
 import numpy as np
 import cv2
 import pandas as pd
-
-
-def show_images(images,titles=None, scale=1.3):
-    """Display a list of images"""
-    n_ims = len(images)
-    if titles is None: titles = ['(%d)' % i for i in range(1,n_ims + 1)]
-    fig = plt.figure()
-    n = 1
-    for image,title in zip(images,titles):
-        a = fig.add_subplot(1,n_ims,n) # Make subplot
-        if image.ndim == 2: # Is image grayscale?
-            plt.imshow(image)
-        else:
-            plt.imshow(cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
-        a.set_title(title)
-        plt.axis("off")
-        n += 1
-    fig.set_size_inches(np.array(fig.get_size_inches(), dtype=np.float) * n_ims / scale)
-    plt.show()
-    
-# Pyramid Down & blurr
-# Easy-peesy
-def pyr_blurr(image):
-    return median_blurr(cv2.pyrDown(image), 5)
-
-def median_blurr(image, size = 7):
-    return cv2.medianBlur(image, size)
-
-def display_contours(image, contours, color = (255, 0, 0), thickness = -1, title = None):
-    imShow = image.copy()
-    for i in range(0, len(contours)):
-        cv2.drawContours(imShow, contours, i, color, thickness)
-    show_images([imShow], scale=0.7, titles=title)
-
+from kobra.imaging import *
 
 def createMask((rows, cols), hull):
     # black image
@@ -69,51 +36,11 @@ def find_eye(image, thresh = 4):
     # returning the hull to illustrate a few issues below
     return mask, hull
 
-def saturate (v):
-    return np.array(map(lambda a: min(max(round(a), 0), 255), v))
-
 def get_masks(images, thresh=4):
     return map(lambda i: find_eye(i, thresh)[0], images)
 
 def maskToAreaRatio(images):
     return map(lambda im: float(cv2.countNonZero(im)) / (im.shape[0] * im.shape[1]), images)
-   
-def calc_hist(images, masks):
-    channels = map(lambda i: cv2.split(i), images)
-    imMask = zip(channels, masks)
-    nonZeros = map(lambda m: cv2.countNonZero(m), masks)
-    
-    # grab three histograms - one for each channel
-    histPerChannel = map(lambda (c, mask): \
-                         [cv2.calcHist([cimage], [0], mask,  [256], np.array([0, 255])) for cimage in c], imMask)
-    # compute the cdf's. 
-    # they are normalized & saturated: values over 255 are cut off.
-    cdfPerChannel = map(lambda (hChan, nz): \
-                        [saturate(np.cumsum(h) * 255.0 / nz) for h in hChan], \
-                        zip(histPerChannel, nonZeros))
-    
-    return np.array(cdfPerChannel)
-
-# compute color map based on minimal distances beteen cdf values of ref and input images    
-def getMin (ref, img):
-    l = [np.argmin(np.abs(ref - i)) for i in img]
-    return np.array(l)
-
-# compute and apply color map on all channels of the image
-def map_image(image, refHist, imageHist):
-    # each of the arguments contains histograms over 3 channels
-    mp = np.array([getMin(r, i) for (r, i) in zip(refHist, imageHist)])
-
-    channels = np.array(cv2.split(image))
-    mappedChannels = np.array([mp[i,channels[i]] for i in range(0, 3)])
-    
-    return cv2.merge(mappedChannels).astype(np.uint8)
-
-# compute the histograms on all three channels for all images
-def histogram_specification(ref, images, masks):
-        cdfs = calc_hist(images, masks)
-        mapped = [map_image(images[i], ref[0], cdfs[i, :, :]) for i in range(len(images))]
-        return mapped
 
 def mask_background(image, mask):
     channels = np.array(cv2.split(image))
@@ -150,7 +77,7 @@ def pre_process(img_path, image_names, ref_image_name, thresh):
 
     images = np.concatenate((imageMaskLarge, imageMaskSmall))
     # when trying to convert a list of one element to array, the result is not
-    # an array of array, but one multi-dimensional array
+    # an array of arrays, but one multi-dimensional array
     masks = masksLarge + masksSmall
     
     ref_image = cv2.imread(path.join(img_path, ref_image_name))

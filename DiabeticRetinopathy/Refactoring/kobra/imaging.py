@@ -114,3 +114,49 @@ def gabor_filters(ksize, sigma = 4.0, lmbda = 10.0, n = 16):
         kern /= 1.5*kern.sum()
         filters.append(kern)
     return filters
+
+def saturate (v):
+    return np.array(map(lambda a: min(max(round(a), 0), 255), v))
+
+def calc_hist(images, masks):
+    channels = map(lambda i: cv2.split(i), images)
+    imMask = zip(channels, masks)
+    nonZeros = map(lambda m: cv2.countNonZero(m), masks)
+    
+    # grab three histograms - one for each channel
+    histPerChannel = map(lambda (c, mask): \
+                         [cv2.calcHist([cimage], [0], mask,  [256], np.array([0, 255])) for cimage in c], imMask)
+    # compute the cdf's. 
+    # they are normalized & saturated: values over 255 are cut off.
+    cdfPerChannel = map(lambda (hChan, nz): \
+                        [saturate(np.cumsum(h) * 255.0 / nz) for h in hChan], \
+                        zip(histPerChannel, nonZeros))
+    
+    return np.array(cdfPerChannel)
+
+# compute color map based on minimal distances beteen cdf values of ref and input images    
+def getMin (ref, img):
+    l = [np.argmin(np.abs(ref - i)) for i in img]
+    return np.array(l)
+
+# compute and apply color map on all channels of the image
+def map_image(image, refHist, imageHist):
+    # each of the arguments contains histograms over 3 channels
+    mp = np.array([getMin(r, i) for (r, i) in zip(refHist, imageHist)])
+
+    channels = np.array(cv2.split(image))
+    mappedChannels = np.array([mp[i,channels[i]] for i in range(0, 3)])
+    
+    return cv2.merge(mappedChannels).astype(np.uint8)
+
+# compute the histograms on all three channels for all images
+def histogram_specification(ref, images, masks):
+    '''
+    ref - reference image
+    images - a set of images to have color transferred via histogram specification
+    masks - masks to apply
+    '''
+    cdfs = calc_hist(images, masks)
+    mapped = [map_image(images[i], ref[0], cdfs[i, :, :]) for i in range(len(images))]
+    return mapped
+

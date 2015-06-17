@@ -23,10 +23,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Features\Blood\blood_detection.py" />
+    <Compile Include="Features\DarkBright\dark_bright_detector.py" />
+    <Compile Include="Features\DarkBright\regions_detect_knn.py" />
     <Compile Include="Features\findEye.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Features\opencv_feats.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\pick_files_of_class.py">
@@ -64,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Features\Blood\" />
+    <Folder Include="Features\DarkBright\" />
     <Folder Include="Learning\" />
     <Folder Include="Features\" />
     <Folder Include="Refactoring\" />
