@@ -23,16 +23,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Features\Blood\blood_detection.py" />
-    <Compile Include="Features\KNN\artifacts_detector_combined.py">
+    <Compile Include="Features\Bright\artifacts_detector_combined.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\KNN\knn_detectors.py">
+    <Compile Include="Features\Bright\knn_detectors.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\KNN\regions_detect_knn.py">
+    <Compile Include="Features\Bright\regions_detect_knn.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\opencv_feats.py">
@@ -72,7 +72,7 @@
     <Compile Include="Refactoring\setup.py" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Features\KNN\" />
+    <Folder Include="Features\Bright\" />
     <Folder Include="Features\Blood\" />
     <Folder Include="Learning\" />
     <Folder Include="Features\" />

@@ -16,7 +16,7 @@ masks_dir = '/kaggle/retina/train/masks'
 
 class ExtractBloodVessels(object):
     '''
-    Based on: http://ictactjournals.in/paper/IJSCPaper_1_563to575.pdf
+    Loosely based on: http://ictactjournals.in/paper/IJSCPaper_1_563to575.pdf
     '''
     def __init__(self, root, im_file, masks_dir):
         self._reader = ImageReader(root, im_file, masks_dir)
@@ -61,6 +61,11 @@ class ExtractBloodVessels(object):
         return im_norm
 
     def extract_blood_vessels(self, im_norm):
+        '''
+        Returns blood vessels and 'adjacent' 
+        pixel effects to be masked out.
+        '''
+
         mask = self._reader.rescale_mask(im_norm)
         thresh, _, _, _ = cv2.mean(im_norm, mask)
 
