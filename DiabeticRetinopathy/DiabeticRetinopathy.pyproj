@@ -26,12 +26,6 @@
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\Bright\dark_bright_detector.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Features\Bright\regions_detect_knn.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Features\opencv_feats.py">
       <SubType>Code</SubType>
     </Compile>
@@ -69,7 +63,6 @@
     <Compile Include="Refactoring\setup.py" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Features\Bright\" />
     <Folder Include="Features\Blood\" />
     <Folder Include="Learning\" />
     <Folder Include="Features\" />
