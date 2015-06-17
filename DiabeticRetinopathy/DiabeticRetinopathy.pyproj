@@ -23,13 +23,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Features\Blood\blood_detection.py" />
-    <Compile Include="Features\Bright\artifacts_detector_combined.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Features\Bright\knn_detectors.py">
+    <Compile Include="Features\Bright\dark_bright_detector.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Features\Bright\regions_detect_knn.py">

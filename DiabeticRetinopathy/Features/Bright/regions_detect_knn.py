@@ -7,16 +7,18 @@ import os
 import shutil
 from kobra.tr_utils import append_to_arr
 from kobra.imaging import show_images, pyr_blurr
-from kobra import DetectOD
+from kobra import DetectOD, ImageReader
 from kobra import enum
 from kobra.retina import find_eye
-from image_reader import ImageReader
 
 # annotation labels
 # Bright and Dark used for MA and HA annotations
 Labels = enum(Drusen = -1, Background = 1, Blood = 2, CameraHue = 3, Outside = 4, OD = 5, Bright = 6, Dark = 7)
 
 def merge_annotations(a1_file, a2_file, out_file = None):
+    '''
+    Helper function to merge two annotation files
+    '''
     if out_file == None: out_file = a1_file
     a1 = pd.read_csv(a1_file, sep = ' ', header = None)
     a2 = pd.read_csv(a2_file, sep = ' ', header = None)
@@ -40,9 +42,11 @@ class KNeighborsRegions (object):
 
         Images must be pre-processed by FeatureExtractionCpp
         '''
-        self._reader = ImageReader(root, im_file, masks_dir)
 
-        self._annotations = path.join(self._root, annotations)
+        self._reader = ImageReader(root, im_file, masks_dir)
+        self._root = root
+
+        self._annotations = path.join(root, annotations)
         self._image = self._reader.image
         self._mask = self._reader.mask
 
@@ -86,16 +90,6 @@ class KNeighborsRegions (object):
             self._rects = append_to_arr(self._rects, rects)                            
 
     def _get_initial_classes(self):
-        '''
-        Averages of the pixels values of all images:
-        Annotations contain:
-        position: meaning (label)
-        0 - 1: drusen/exudates (0)
-        2 - 3: texture (1)
-        4 - 5: vessels, aneurisms, haemorages (2)
-        6 - 7: bluish hue at the edges (3)
-        8 - 9 background (4)
-        '''
         images = map(lambda f: cv2.imread(path.join(self._root, f)), self._files)
         self._avg_pixels = np.array([], dtype=np.uint8)
 
@@ -172,9 +166,10 @@ class KNeighborsRegions (object):
 
         if self._avg_pixels.size == 0:
             self._get_initial_classes()
-
-        mask [ mask != 0 ] = 255
-        rows = mask.shape[0]
+        
+        
+        im = self._image
+        rows = im.shape[0]
 
         clf = KNeighborsClassifier(n_neighbors = self._n_neighbors)
         clf.fit(self._avg_pixels, self._labels)
