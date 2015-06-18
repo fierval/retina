@@ -22,9 +22,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Features\Blood\blood_detection.py" />
+    <Compile Include="Refactoring\kobra\dr\blood_detection.py" />
     <Compile Include="Features\DarkBright\dark_bright_detector.py" />
-    <Compile Include="Features\DarkBright\regions_detect_knn.py" />
+    <Compile Include="Refactoring\kobra\dr\regions_detect_knn.py" />
     <Compile Include="Features\findEye.py">
       <SubType>Code</SubType>
     </Compile>
@@ -57,7 +57,6 @@
     <Compile Include="Refactoring\setup.py" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Features\Blood\" />
     <Folder Include="Features\DarkBright\" />
     <Folder Include="Learning\" />
     <Folder Include="Features\" />

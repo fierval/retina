@@ -1,5 +1,6 @@
 import numpy as np
-from regions_detect_knn import KNeighborsRegions, Labels
+from kobra.dr import KNeighborsRegions, Labels
+from kobra.dr import ExtractBloodVessels
 import mahotas as mh
 from kobra.imaging import max_labelled_region
 import cv2
@@ -121,3 +122,7 @@ class DarkBrightDetector(KNeighborsRegions):
         self._prediction [od_bright != 0] = Labels.Masked
 
         self.display_current(self._prediction)
+
+    def mask_off_blood_vessels(self):
+
+        assert(self._prediction), "Prediction labels not computed"

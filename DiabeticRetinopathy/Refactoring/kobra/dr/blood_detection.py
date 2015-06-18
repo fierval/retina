@@ -7,7 +7,7 @@ import shutil
 from kobra.imaging import *
 import pywt
 import mahotas as mh
-from kobra.dr import ImageProcessor
+from image_processor import ImageProcessor
 
 root = '/kaggle/retina/train/sample/split'
 im_file = '3/27224_right.jpeg'
@@ -59,7 +59,7 @@ class ExtractBloodVessels(ImageProcessor):
 
         return im_norm
 
-    def extract_blood_vessels(self, im_norm):
+    def extract_blood_vessels_mask(self, im_norm):
         '''
         Returns blood vessels and 'adjacent' 
         pixel effects to be masked out.
@@ -98,4 +98,39 @@ class ExtractBloodVessels(ImageProcessor):
         # mask out the markers
         mask [markers != 0] = 0
         self._mask = mask
+        return markers
+
+    def extract_blood_vessels(self, im_norm):
+        '''
+        Extracts blood vessels. 
+
+        im_norm - output of preprocess()
+        '''
+        mask = self._reader.rescale_mask(im_norm)
+        thresh, _, _, _ = cv2.mean(im_norm, mask)
+
+        # computes vessel regions with mahotas distance function
+        Bc = np.ones((3, 3))
+        threshed = (im_norm > thresh)
+        distances = mh.stretch(mh.distance(threshed))
+        _, im = cv2.threshold(distances, 0, 255, cv2.THRESH_BINARY)
+    
+        # erode/dilate 
+        im = remove_light_reflex(im)
+        im = remove_light_reflex(im)
+    
+        # label and remove the region of the largest size
+        markers, n_markers = mh.label(im)
+
+        # sizes without the background region
+        sizes = mh.labeled.labeled_size(markers)[1:]
+
+        # vessels region is the one with the largest area
+        # since we have removed background region "0", add 1
+        vessels_label = np.argmax(sizes) + 1
+
+        markers[ markers != vessels_label] = 0
+  
+        show_images([markers], titles = ["vessels"])
+
         return markers
