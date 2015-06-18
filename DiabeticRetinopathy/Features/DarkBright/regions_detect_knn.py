@@ -12,8 +12,10 @@ from kobra.dr.retina import find_eye
 from kobra.dr import ImageProcessor
 
 # annotation labels
-# Bright and Dark used for MA and HA annotations
-Labels = enum(Drusen = -1, Background = 1, Blood = 2, CameraHue = 3, Outside = 4, OD = 5, Bright = 6, Dark = 7)
+# Background == Texture. Outside == 0-pixel, Masked == irrelevant for the prediction matrix
+# Used to mask regions out of the matrix returned by KNN
+Labels = enum(Drusen = 255, Background = 1, Blood = 2, 
+              CameraHue = 3, Outside = 4, OD = 5, Masked = 6)
 
 def merge_annotations(a1_file, a2_file, out_file = None):
     '''
@@ -47,9 +49,6 @@ class KNeighborsRegions (ImageProcessor):
         self._root = root
 
         self._annotations = path.join(root, annotations)
-        self._image = self._reader.image
-        self._mask = self._reader.mask
-
         self._n_neighbors = n_neighbors
 
         assert(path.exists(self._annotations)), "Annotations file does not exist: " + self._annotations
@@ -141,7 +140,6 @@ class KNeighborsRegions (ImageProcessor):
     
     def display_artifact(self, prediction, artifact, color, title):
         im = self._image
-        mask = self._mask
         im_art = im.copy()
 
         im_art [prediction == artifact] = color

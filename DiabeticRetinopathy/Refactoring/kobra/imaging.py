@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import pandas as pd
 from math import exp
+import mahotas as mh
 from numbapro import vectorize
 
 
@@ -160,3 +161,8 @@ def histogram_specification(ref, images, masks):
     mapped = [map_image(images[i], ref[0], cdfs[i, :, :]) for i in range(len(images))]
     return mapped
 
+def max_labelled_region(labels, Bc = None):
+    '''
+    Labelled region of maximal area
+    '''
+    return np.argmax(mh.labeled.labeled_size(labels)[1:]) + 1
