@@ -27,10 +27,11 @@ class ImageReader(object):
         self._mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
         return self.rescale_mask(self._image)
 
-    def rescale_mask(self, image):
+    @staticmethod
+    def rescale_mask(image, mask):
         scale = image.shape[1], image.shape[0]
-        self._mask = cv2.resize(self._mask, scale)
-        return self._mask
+        mask = cv2.resize(mask, scale)
+        return mask
 
     @property
     def mask(self):

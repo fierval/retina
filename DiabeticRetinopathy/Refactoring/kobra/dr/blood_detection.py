@@ -8,6 +8,7 @@ from kobra.imaging import *
 import pywt
 import mahotas as mh
 from image_processor import ImageProcessor
+from image_reader import ImageReader
 
 root = '/kaggle/retina/train/sample/split'
 im_file = '3/27224_right.jpeg'
@@ -65,7 +66,8 @@ class ExtractBloodVessels(ImageProcessor):
         pixel effects to be masked out.
         '''
 
-        mask = self._reader.rescale_mask(im_norm)
+        # Haar changes image size. We need to change the mask size as well
+        mask = ImageReader.rescale_mask(im_norm, mask)
         thresh, _, _, _ = cv2.mean(im_norm, mask)
 
         # computes vessel regions with mahotas distance function
@@ -106,7 +108,7 @@ class ExtractBloodVessels(ImageProcessor):
 
         im_norm - output of preprocess()
         '''
-        mask = self._reader.rescale_mask(im_norm)
+        mask = ImageReader.rescale_mask(im_norm, mask)
         thresh, _, _, _ = cv2.mean(im_norm, mask)
 
         # computes vessel regions with mahotas distance function

@@ -4,22 +4,31 @@ from kobra.dr import ExtractBloodVessels
 import mahotas as mh
 from kobra.imaging import max_labelled_region
 import cv2
+from kobra.dr import ImageReader
 
+# path to the images preprocessed by histogram specification from 16_left.jpeg
 root = '/kaggle/retina/train/labelled'
 annotations = 'annotations.txt'
 masks_dir = '/kaggle/retina/train/masks'
 im_file = '4/16_left.jpeg'
-orig_path = '/kaggle/retina/train/sample'
+
+# path to the original images
+orig_path = '/kaggle/retina/train/sample/split'
 
 class DarkBrightDetector(KNeighborsRegions):
     '''
     Detect bright/dark spots.
     Drusen/Exudates (bright) and haemorages/aneurisms (dark) detected
     '''
-    def __init__(self, root, im_file, annotations, masks_dir, n_neighbors = 3):
+    def __init__(self, root, orig_path, im_file, annotations, masks_dir, n_neighbors = 3):
 
         KNeighborsRegions.__init__(self, root, im_file, annotations, masks_dir, n_neighbors)
         self._prediction = np.array([])
+        
+        # instantiate blood vessels detector
+        self._blood_root = orig_path
+        self._blood = ExtractBloodVessels(self._blood_root, im_file, masks_dir)
+
         # Labels match the structure of the annotations file:
         '''
         Averages of the pixels values of all images:
@@ -125,4 +134,19 @@ class DarkBrightDetector(KNeighborsRegions):
 
     def mask_off_blood_vessels(self):
 
+        # predictions should exist by now
         assert(self._prediction), "Prediction labels not computed"
+
+        # get blood
+        im_norm = self._blood.preprocess()
+        blood_markers = self._blood.extract_blood_vessels_mask(im_norm)
+
+        blood_mask = self._blood.mask
+
+        # need to rescale the mask back to original size
+        # the mask gets scaled down during haar transform of ExtractBloodVessels
+        blood_markers = ImageReader.rescale_mask(self.image, blood_markers)
+
+        # mask off blood vessels
+        self._prediction [blood_markers != 0] = Labels.Masked
+        self._mask [blood_markers != 0] = 0
