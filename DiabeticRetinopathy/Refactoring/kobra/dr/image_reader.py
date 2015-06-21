@@ -25,7 +25,7 @@ class ImageReader(object):
         assert (path.exists(mask_file)), "Mask does not exist"    
 
         self._mask = cv2.imread(mask_file, cv2.IMREAD_GRAYSCALE)
-        return self.rescale_mask(self._image)
+        return ImageReader.rescale_mask(self._image, self._mask)
 
     @staticmethod
     def rescale_mask(image, mask):

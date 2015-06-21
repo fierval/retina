@@ -1,9 +1,10 @@
 from matplotlib import pyplot as plt
+from matplotlib import cm
 from os import path
 import numpy as np
 import cv2
 import pandas as pd
-from math import exp
+from math import exp, pi, sqrt
 import mahotas as mh
 from numbapro import vectorize
 
@@ -17,7 +18,7 @@ def show_images(images,titles=None, scale=1.3):
     for image,title in zip(images,titles):
         a = fig.add_subplot(1,n_ims,n) # Make subplot
         if image.ndim == 2: # Is image grayscale?
-            plt.imshow(image)
+            plt.imshow(image, cmap = cm.Greys_r)
         else:
             plt.imshow(cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
         a.set_title(title)
@@ -59,27 +60,51 @@ def remove_light_reflex(im):
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     return cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
 
-def matched_filter_kernel(L, sigma):
-    '''
-    K = -exp(-x^2/2sigma^2), |y| <= L/2
-    '''
-    dim = int(L/2)
-    arr = np.zeros((dim, dim), 'f')
+def _filter_kernel_mf_fdog(L, sigma, t = 3, mf = True):
+    dim_y = int(L/2)
+    dim_x = int(t * sigma)
+    arr = np.zeros((dim_y, dim_x), 'f')
 
     # an un-natural way to set elements of the array
     # to their x coordinate
     it = np.nditer(arr, flags=['multi_index'])
     while not it.finished:
-        arr[it.multi_index] = it.multi_index[0]
+        arr[it.multi_index] = it.multi_index[1]
         it.iternext()
 
     two_sigma_sq = 2 * sigma * sigma
+    sqrt_w_pi_sigma = 1. / (sqrt(2 * pi) * sigma)
+    if not mf:
+        sqrt_w_pi_sigma = sqrt_w_pi_sigma / sigma ** 2
 
     @vectorize(['float32(float32)'], target='cpu')
     def k_fun(x):
-        return -exp(-x * x / two_sigma_sq)
+        return sqrt_w_pi_sigma * exp(-x * x / two_sigma_sq)
 
-    return k_fun(arr)
+    @vectorize(['float32(float32)'], target='cpu')
+    def k_fun_derivative(x):
+        return -x * sqrt_w_pi_sigma * exp(-x * x / two_sigma_sq)
+
+    if mf:
+        kernel = k_fun(arr)
+        kernel = kernel - kernel.mean()
+    else:
+       kernel = k_fun_derivative(arr)
+
+    # return the convolution, not correlation kernel for filter2D
+    return cv2.flip(kernel, -1)
+
+def fdog_filter_kernel(L, sigma, t = 3):
+    '''
+    K = - (x/(sqrt(2 * pi) * sigma ^3)) * exp(-x^2/2sigma^2), |y| <= L/2
+    '''
+    return _filter_kernel_mf_fdog(L, sigma, t, False)
+
+def matched_filter_kernel(L, sigma, t = 3):
+    '''
+    K =  1/(sqrt(2 * pi) * sigma ) * exp(-x^2/2sigma^2), |y| <= L/2
+    '''
+    return _filter_kernel_mf_fdog(L, sigma, t, True)
 
 def createMatchedFilterBank(K, n = 12):
     '''
@@ -93,7 +118,7 @@ def createMatchedFilterBank(K, n = 12):
     for i in range(1, n):
         cur_rot += rotate
         r_mat = cv2.getRotationMatrix2D(center, cur_rot, 1)
-        k = cv2.warpAffine(K, r_mat, (K.shape[1], K.shape[0]))
+        k = cv2.warpAffine(K, r_mat, K.shape)
         kernels.append(k)
 
     return kernels

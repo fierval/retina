@@ -44,9 +44,6 @@
     <ClCompile Include="FeatureExtractionCpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FindHaemorages.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TransformImage.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>

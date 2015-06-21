@@ -1,10 +1,8 @@
 import numpy as np
-from kobra.dr import KNeighborsRegions, Labels
-from kobra.dr import ExtractBloodVessels
+from kobra.dr import KNeighborsRegions, Labels, ExtractBloodVessels, ImageReader
 import mahotas as mh
 from kobra.imaging import max_labelled_region
 import cv2
-from kobra.dr import ImageReader
 
 # path to the images preprocessed by histogram specification from 16_left.jpeg
 root = '/kaggle/retina/train/labelled'
@@ -90,56 +88,14 @@ class DarkBrightDetector(KNeighborsRegions):
         #self._prediction[self._prediction == Labels.OD] = Labels.Drusen
         self.display_current(self._prediction)
 
-    def get_bright_regions(self):
-        '''
-        Mask off regions immediately adjecent to the OD
-        '''
-
-        # Find the largest "OD" region
-
-        # Initial labelling
-        if self._prediction.size == 0:
-            self._prediction = self.analyze_image()
-
-        ods = self._prediction.copy()
-
-        # find maximum size "OD" region
-        # this should be the OD itself
-        ods[ods != Labels.OD] = 0
-        ods, _ = mh.label(ods, Bc = np.ones((9, 9)))
-
-        # label of the region of maximum size
-        # 0-th region is always the background, so we leave it out
-        od_region = max_labelled_region(ods)
-
-        # mask out everything except the OD
-        ods [ ods != od_region] = 0
-
-        # combine OD with all bright regions
-        bright = self._prediction.copy()
-        bright [ bright != Labels.Drusen] = 0
-        bright = bright + ods
-
-        # maximum connected region has to be eliminated
-        od_bright, _ = mh.label(bright, Bc = np.ones((9, 9)))
-        od_bright_max = max_labelled_region(od_bright)
-        od_bright [od_bright != od_bright_max] = 0
-
-        # in our mask remove the region corresponding to
-        # OD + connected artifacts
-        self._mask [od_bright != 0] = 0
-        self._prediction [od_bright != 0] = Labels.Masked
-
-        self.display_current(self._prediction)
-
     def mask_off_blood_vessels(self):
 
         # predictions should exist by now
-        assert(self._prediction), "Prediction labels not computed"
+        assert(self._prediction.size > 0 ), "Prediction labels not computed"
 
         # get blood
         im_norm = self._blood.preprocess()
-        blood_markers = self._blood.extract_blood_vessels_mask(im_norm)
+        blood_markers = self._blood.extract_blood_vessels(im_norm)
 
         blood_mask = self._blood.mask
 
