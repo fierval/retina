@@ -7,11 +7,8 @@ import shutil
 from kobra.imaging import *
 import pywt
 import mahotas as mh
-#from image_processor import ImageProcessor
-#from image_reader import ImageReader
-
-from kobra.dr import ImageProcessor
-from kobra.dr import ImageReader
+from image_processor import ImageProcessor
+from image_reader import ImageReader
 
 root = '/kaggle/retina/train/sample/split'
 im_file = '3/27224_right.jpeg'
@@ -28,7 +25,6 @@ class ExtractBloodVessels(ImageProcessor):
 
         # keep green channel
         self._image = self.image[:, :, 1].copy()
-        self._norm_const = 2.2
 
     def preprocess(self):
         im = self._image
@@ -49,45 +45,15 @@ class ExtractBloodVessels(ImageProcessor):
 
         # Matched and FDOG filter responses
         K_MF = matched_filter_kernel(31, 5)
-        K_FDOG = fdog_filter_kernel(31, 5)
         kernels_mf = createMatchedFilterBank(K_MF, 12)
-        kernels_fdog = createMatchedFilterBank(K_FDOG, 12)
         im_matched_mf = applyFilters(im_haar, kernels_mf)
-        im_matched_fdog = applyFilters(im_haar, kernels_fdog)
         
-        # normalize local mean of FDOG response
-        local_mean_fdog = cv2.blur(im_matched_fdog, (11, 11))
-        local_mean_fdog = cv2.normalize(local_mean_fdog, alpha = 0, beta = 1, norm_type = cv2.NORM_MINMAX)
-        
-        # set the threshold matrix
-        mask = ImageReader.rescale_mask(im_matched_mf, self.mask)
-        mean_thresh, _, _, _ = cv2.mean(im_matched_mf, mask)
-        ref_thresh = mean_thresh * self._norm_const
-        ref_thresh = ref_thresh * (1 + local_mean_fdog)
-
         # show the results
         show_images([self._reader.image])
         show_images([im_gray, im_haar], titles = ["gray", "haar"])
-        show_images([im_matched_mf, im_matched_fdog], titles = ["mf", "fdog"])
+        show_images([im_matched_mf], titles = ["mf"])
 
-        im_vessels = im_matched_mf.copy()
-        im_vessels [im_vessels < ref_thresh] = 0
-        im_vessels [mask == 0] = 0
-        im_vessels [im_vessels != 0] = 1
-        im_vessels = im_vessels.astype('uint8')
-
-        #im_vessels =remove_light_reflex(im_vessels)
-        show_images([im_vessels], titles = ["vessels"])
-        self._im_norm = mh.stretch(im_matched_mf)
-
-        return im_vessels
-
-    def extract_blood_vessles_mf(self, im_vessels):
-        Bc = np.ones((9,9))
-        spots,n_spots = mh.label(im_vessels, Bc=Bc)
-        im = mh.cwatershed(self._im_norm, spots)
-        plt.imshow(im)
-        return im
+        return mh.stretch(im_matched_mf.astype(np.int))
 
     def extract_blood_vessels_mask(self, im_norm):
         '''
@@ -129,39 +95,4 @@ class ExtractBloodVessels(ImageProcessor):
         # mask out the markers
         mask [markers != 0] = 0
         self._mask = mask
-        return markers
-
-    def extract_blood_vessels(self, im_norm):
-        '''
-        Extracts blood vessels. 
-
-        im_norm - output of preprocess()
-        '''
-        mask = ImageReader.rescale_mask(im_norm, self.mask)
-        thresh, _, _, _ = cv2.mean(im_norm, mask)
-
-        # computes vessel regions with mahotas distance function
-        Bc = np.ones((3, 3))
-        threshed = (im_norm > thresh)
-        distances = mh.stretch(mh.distance(threshed))
-        _, im = cv2.threshold(distances, 0, 255, cv2.THRESH_BINARY)
-    
-        # erode/dilate 
-        im = remove_light_reflex(im)
-        im = remove_light_reflex(im)
-    
-        # label and remove the region of the largest size
-        markers, n_markers = mh.label(im)
-
-        # sizes without the background region
-        sizes = mh.labeled.labeled_size(markers)[1:]
-
-        # vessels region is the one with the largest area
-        # since we have removed background region "0", add 1
-        vessels_label = np.argmax(sizes) + 1
-
-        markers[ markers != vessels_label] = 0
-  
-        show_images([markers], titles = ["vessels"])
-
         return markers
