@@ -44,16 +44,19 @@ class ExtractBloodVessels(ImageProcessor):
         im_haar = remove_light_reflex(im_haar)
 
         # Matched and FDOG filter responses
-        K_MF = matched_filter_kernel(31, 5)
+        K_MF = matched_filter_kernel(15, 3, 5)
+        K_FDOG = fdog_filter_kernel(15, 3, 5)
         kernels_mf = createMatchedFilterBank(K_MF, 12)
+        kernels_fdog = createMatchedFilterBank(K_FDOG, 12)
         im_matched_mf = applyFilters(im_haar, kernels_mf)
-        
+        im_matched_fdog = applyFilters(im_haar, kernels_fdog)
+
         # show the results
         show_images([self._reader.image])
         show_images([im_gray, im_haar], titles = ["gray", "haar"])
-        show_images([im_matched_mf], titles = ["mf"])
+        show_images([im_matched_mf, im_matched_fdog], titles = ["mf", "fdog"])
 
-        return mh.stretch(im_matched_mf.astype(np.int))
+        return mh.stretch(im_matched_fdog.astype(np.int))
 
     def extract_blood_vessels_mask(self, im_norm):
         '''

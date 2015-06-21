@@ -61,15 +61,18 @@ def remove_light_reflex(im, ksize = 5):
     return cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
 
 def _filter_kernel_mf_fdog(L, sigma, t = 3, mf = True):
-    dim_y = int(L/2)
-    dim_x = int(t * sigma)
+    dim_y = int(L)
+    dim_x = 2 * int(t * sigma)
     arr = np.zeros((dim_y, dim_x), 'f')
+    
+    ctr_x = dim_x / 2 
+    ctr_y = int(dim_y / 2.)
 
     # an un-natural way to set elements of the array
     # to their x coordinate
     it = np.nditer(arr, flags=['multi_index'])
     while not it.finished:
-        arr[it.multi_index] = it.multi_index[1]
+        arr[it.multi_index] = it.multi_index[1] - ctr_x
         it.iternext()
 
     two_sigma_sq = 2 * sigma * sigma
@@ -87,22 +90,23 @@ def _filter_kernel_mf_fdog(L, sigma, t = 3, mf = True):
 
     if mf:
         kernel = k_fun(arr)
-        kernel = kernel - kernel.mean()
+        kernel = kernel - kernel.sum() / dim_x
     else:
        kernel = k_fun_derivative(arr)
 
-    # return the convolution, not correlation kernel for filter2D
-    return cv2.flip(kernel, -1)
+    # return the correlation kernel for filter2D
+    # cv2.flip(kernel, -1) gets us the convolution kernel
+    return kernel
 
 def fdog_filter_kernel(L, sigma, t = 3):
     '''
-    K = - (x/(sqrt(2 * pi) * sigma ^3)) * exp(-x^2/2sigma^2), |y| <= L/2
+    K = - (x/(sqrt(2 * pi) * sigma ^3)) * exp(-x^2/2sigma^2), |y| <= L/2, |x| < s * t
     '''
     return _filter_kernel_mf_fdog(L, sigma, t, False)
 
 def matched_filter_kernel(L, sigma, t = 3):
     '''
-    K =  1/(sqrt(2 * pi) * sigma ) * exp(-x^2/2sigma^2), |y| <= L/2
+    K =  1/(sqrt(2 * pi) * sigma ) * exp(-x^2/2sigma^2), |y| <= L/2, |x| < s * t
     '''
     return _filter_kernel_mf_fdog(L, sigma, t, True)
 
