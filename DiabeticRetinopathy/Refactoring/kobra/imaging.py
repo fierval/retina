@@ -90,13 +90,12 @@ def _filter_kernel_mf_fdog(L, sigma, t = 3, mf = True):
 
     if mf:
         kernel = k_fun(arr)
-        kernel = kernel - kernel.sum() / dim_x
+        kernel = kernel - kernel.mean()
     else:
        kernel = k_fun_derivative(arr)
 
     # return the correlation kernel for filter2D
-    # cv2.flip(kernel, -1) gets us the convolution kernel
-    return kernel
+    return cv2.flip(kernel, -1) 
 
 def fdog_filter_kernel(L, sigma, t = 3):
     '''
@@ -104,7 +103,7 @@ def fdog_filter_kernel(L, sigma, t = 3):
     '''
     return _filter_kernel_mf_fdog(L, sigma, t, False)
 
-def matched_filter_kernel(L, sigma, t = 3):
+def gaussian_matched_filter_kernel(L, sigma, t = 3):
     '''
     K =  1/(sqrt(2 * pi) * sigma ) * exp(-x^2/2sigma^2), |y| <= L/2, |x| < s * t
     '''
