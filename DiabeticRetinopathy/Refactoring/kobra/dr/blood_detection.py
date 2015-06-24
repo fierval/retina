@@ -28,7 +28,7 @@ class ExtractBloodVessels(ImageProcessor):
         self._norm_const = 2.45
         self._is_debug = is_debug
 
-    def detect_vessels(self):
+    def detect_vessels(self, additional_mask = None):
         im = self._image
         mask = self._mask
 
@@ -46,10 +46,17 @@ class ExtractBloodVessels(ImageProcessor):
         im_haar = remove_light_reflex(im_haar)
         
         mask = ImageReader.rescale_mask(im_haar, self.mask)
-    
+        try:
+            hasAdditionalMask = additional_mask.size > 0
+            additional_mask = ImageReader.rescale_mask(im_haar, additional_mask)
+        except AttributeError:
+            hasAdditionalMask = False
+
         # compute the image mean to "invert" the image
         # for the gausssian matched filter
         mean_thresh, _, _, _ = cv2.mean(im_haar, mask)
+        if hasAdditionalMask:
+            im_haar[additional_mask != 0] = mean_thresh
         im_haar = mean_thresh - im_haar
 
         # Gaussian Matched and FDOG filter responses

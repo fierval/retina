@@ -58,6 +58,28 @@ class DarkBrightDetector(KNeighborsRegions):
         region [region != label] = 0
         return region
 
+    def _mask_off_od(self):
+        assert (self._prediction.size > 0), "Prediction must be computed"
+
+        drusen = self._get_predicted_region(Labels.Drusen)
+        od = self._get_predicted_region(Labels.OD)
+
+        combined = drusen + od
+        combined [combined != 0] = 255
+
+        labels, n_labels = mh.label(combined, Bc = np.ones((5, 5)))
+        sizes = mh.labeled.labeled_size(labels)
+
+        # heuristic for finding optic disk. Sometimes a camera flare region 
+        # may get in the way (hopefully just one)
+        od_region_susp_1 = np.argmax(sizes[1:]) + 1
+        sizes [od_region_susp_1] = 0
+        od_region_susp_2 = np.argmax(sizes[1:]) + 1
+        if float(od_region_susp_2) / od_region_susp_1 > 0.7:
+            self._prediction[labels == od_region_susp_2] = Labels.Masked
+
+        self._prediction[labels == od_region_susp_1] = Labels.Masked
+
     def find_bright_regions(self, thresh = 0.003, abs_area = 50):
         '''
         Finds suspicious bright regions, refines the prediction by:
@@ -68,8 +90,13 @@ class DarkBrightDetector(KNeighborsRegions):
         if self._prediction.size == 0:
             self._prediction = self.analyze_image().astype('uint8')
 
+        # mask off OD - assumed to be the largest bright area
+        self._mask_off_od()
+        drusen = self._get_predicted_region(Labels.Drusen).astype('uint8')
+        drusen [drusen != 0] = 255
+
         # get blood
-        self._blood_vessel_markers = self._blood.detect_vessels()
+        self._blood_vessel_markers = self._blood.detect_vessels(drusen)
 
         # need to rescale the mask back to original size
         # the mask gets scaled down during haar transform of ExtractBloodVessels
@@ -78,31 +105,34 @@ class DarkBrightDetector(KNeighborsRegions):
         # mask off blood vessels
         self._prediction [self._blood_markers != 0] = Labels.BloodVessel
 
-        # cutoff area
-        area = cv2.countNonZero(self._mask) * thresh
+        # relable remaining "OD" elements
+        #self._prediction[self._prediction == Labels.OD] = Labels.Drusen
 
-        # get bright regions and combine them
-        ods = self._get_predicted_region(Labels.OD)
-        drusen = self._get_predicted_region(Labels.Drusen)
-        blood = self._get_predicted_region(Labels.Haemorage)
-        combined = ods + drusen + blood
+        ## cutoff area
+        #area = cv2.countNonZero(self._mask) * thresh
+
+        ## get bright regions and combine them
+        #ods = self._get_predicted_region(Labels.OD)
+        #drusen = self._get_predicted_region(Labels.Drusen)
+        #blood = self._get_predicted_region(Labels.Haemorage)
+        #combined = ods + drusen + blood
               
-        # relabel the combined regions & calculate large removable regions
-        # this will remove OD and related effects
-        labelled, n = mh.label(combined, Bc = np.ones((9, 9)))
-        sizes = mh.labeled.labeled_size(labelled)[1:]
-        to_remove = np.argwhere(sizes >= area) + 1        
+        ## relabel the combined regions & calculate large removable regions
+        ## this will remove OD and related effects
+        #labelled, n = mh.label(combined, Bc = np.ones((9, 9)))
+        #sizes = mh.labeled.labeled_size(labelled)[1:]
+        #to_remove = np.argwhere(sizes >= area) + 1        
 
-        #compute small regions to be removed
-        to_remove_small = np.argwhere(sizes <= abs_area) + 1
-        to_remove = np.r_[to_remove, to_remove_small]
+        ##compute small regions to be removed
+        #to_remove_small = np.argwhere(sizes <= abs_area) + 1
+        #to_remove = np.r_[to_remove, to_remove_small]
 
-        # remove large areas from prediction matrix
-        for i in to_remove:
-            self._prediction [labelled == i] = Labels.Masked
+        ## remove large areas from prediction matrix
+        #for i in to_remove:
+        #    self._prediction [labelled == i] = Labels.Masked
 
         # morphological opening to remove spurious labels areas
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         self._prediction = cv2.morphologyEx(self._prediction, cv2.MORPH_OPEN, kernel)
 
         self.display_current(self._prediction)
