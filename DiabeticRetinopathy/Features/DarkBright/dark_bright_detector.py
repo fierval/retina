@@ -42,19 +42,23 @@ class DarkBrightDetector(KNeighborsRegions):
 
         self._labels =  [Labels.Drusen, Labels.Drusen, Labels.Background, Labels.Background, 
                     Labels.CameraHue, Labels.CameraHue, 
-                    Labels.Outside, Labels.Outside, Labels.OD, Labels.OD]
+                    Labels.Haemorage, Labels.Haemorage, Labels.OD, Labels.OD]
 
     def display_current(self, prediction, with_camera = False):
         if self._is_debug:
             self.display_artifact(prediction, Labels.Drusen, (0, 255, 0), "Drusen")
-            self.display_artifact(prediction, Labels.Outside, (0, 0, 255), "Haemorages")
+            self.display_artifact(prediction, Labels.Haemorage, (0, 0, 255), "Haemorages")
 
     def _get_predicted_region(self, label):
+        '''
+        Get a copy of the prediction matrix 
+        where everything except for the 'label' is masked off
+        '''
         region = self._prediction.copy()
         region [region != label] = 0
         return region
 
-    def find_bright_regions(self, thresh = 0.0025, abs_area = 50):
+    def find_bright_regions(self, thresh = 0.003, abs_area = 50):
         '''
         Finds suspicious bright regions, refines the prediction by:
         - Removing areas of large size: >= image * thresh
@@ -103,7 +107,40 @@ class DarkBrightDetector(KNeighborsRegions):
         self._blood_markers = ImageReader.rescale_mask(self.image, self._blood_vessel_markers)
 
         # mask off blood vessels
-        self._prediction [self._blood_markers != 0] = Labels.Masked
-        self._mask [self._blood_markers != 0] = 0
+        self._prediction [self._blood_markers != 0] = Labels.BloodVessel
+
+        # now mask off everything blood-vessels adjacent.
+
+        # first get the regions to be masked
+        drusen = self._get_predicted_region(Labels.Drusen)
+        blood = self._get_predicted_region(Labels.Haemorage)
+
+        # and the vessel region
+        vessels = self._get_predicted_region(Labels.BloodVessel)
+        combined = drusen + blood + vessels
+
+        # mark regions of interest
+        combined[combined == Labels.Drusen] = Labels.Masked
+        combined[combined == Labels.Haemorage] = Labels.Masked
+
+        # label them - we don't care about the labels.
+        Bc = np.ones((9, 9))
+        regions, n_regions = mh.label(combined, Bc)
+        vessel_regions, n_vessels = mh.label(vessels, Bc)
+
+        seeds = []
+        # find vessel seeds
+        for vessel in vessel_regions[1:]:
+            points = np.nonzero(vessel_regions[vessel_regions == vessel])
+            nonz = points.nonzero()
+
+            # for OpenCV it's (x, y) i.e. (col, row)
+            seeds.append(nonz[1][0], nonz[0][0])
+
+        # flood-fill all the regions with the BloodVessel mask
+        for seed in seeds:
+            self._flood_fill(seed, self._prediction, Labels.BloodVessel, deltaHigh = math.abs(Labels.Masked - Labels.BloodVessel))
 
         self.display_current(self._prediction)
+
+        

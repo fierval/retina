@@ -25,7 +25,7 @@ class ExtractBloodVessels(ImageProcessor):
 
         # keep green channel
         self._image = self.image[:, :, 1].copy()
-        self._norm_const = 2.5
+        self._norm_const = 2.45
         self._is_debug = is_debug
 
     def detect_vessels(self):

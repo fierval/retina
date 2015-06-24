@@ -12,10 +12,10 @@ from kobra.dr.retina import find_eye
 from kobra.dr import ImageProcessor
 
 # annotation labels
-# Background == Texture. Outside == 0-pixel, Masked == irrelevant for the prediction matrix
+# Background == Texture. Masked == irrelevant for the prediction matrix
 # Used to mask regions out of the matrix returned by KNN
-Labels = enum(Drusen = 255, Background = 1, Blood = 2, 
-              CameraHue = 3, Outside = 4, OD = 5, Masked = 6)
+Labels = enum(Drusen = 7, Background = 1, BloodVessel = 2, 
+              CameraHue = 3, Haemorage = 4, OD = 5, Masked = 6)
 
 def merge_annotations(a1_file, a2_file, out_file = None):
     '''
@@ -178,10 +178,11 @@ class KNeighborsRegions (ImageProcessor):
         prediction = clf.predict(im_1d)
         prediction = prediction.reshape(rows, -1)
 
+        prediction [self._mask == 0] = Labels.Masked
         self.display_current(prediction)
         return prediction
 
-    def _flood_fill(self, ctr, labels, deltaLow = 0, deltaHigh = 0):
+    def _flood_fill(self, ctr, labels, newVal = 0, deltaLow = 0, deltaHigh = 0):
 
         # The mask needs to be 2 pixels larger than the image
         h, w = self._mask.shape[0] + 2, self._mask.shape[1] + 2
@@ -189,7 +190,7 @@ class KNeighborsRegions (ImageProcessor):
 
         # connectivity is 8 neighbors, fill mask with 255
         flags = 8 | ( 255 << 8 ) | cv2.FLOODFILL_FIXED_RANGE
-        cv2.floodFill(prediction, mask, ctr, 0, 0, 0, flags)
+        cv2.floodFill(prediction, mask, ctr, newVal, deltaLow, deltaHigh, flags)
 
         self.display_current(labels)
 
