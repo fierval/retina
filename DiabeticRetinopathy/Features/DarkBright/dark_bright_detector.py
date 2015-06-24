@@ -66,7 +66,17 @@ class DarkBrightDetector(KNeighborsRegions):
         '''
         assert( 0 < thresh < 1), "Threshold is in (0, 1)"
         if self._prediction.size == 0:
-            self._prediction = self.analyze_image()
+            self._prediction = self.analyze_image().astype('uint8')
+
+        # get blood
+        self._blood_vessel_markers = self._blood.detect_vessels()
+
+        # need to rescale the mask back to original size
+        # the mask gets scaled down during haar transform of ExtractBloodVessels
+        self._blood_markers = ImageReader.rescale_mask(self.image, self._blood_vessel_markers)
+
+        # mask off blood vessels
+        self._prediction [self._blood_markers != 0] = Labels.BloodVessel
 
         # cutoff area
         area = cv2.countNonZero(self._mask) * thresh
@@ -74,7 +84,8 @@ class DarkBrightDetector(KNeighborsRegions):
         # get bright regions and combine them
         ods = self._get_predicted_region(Labels.OD)
         drusen = self._get_predicted_region(Labels.Drusen)
-        combined = ods + drusen
+        blood = self._get_predicted_region(Labels.Haemorage)
+        combined = ods + drusen + blood
               
         # relabel the combined regions & calculate large removable regions
         # this will remove OD and related effects
@@ -90,27 +101,13 @@ class DarkBrightDetector(KNeighborsRegions):
         for i in to_remove:
             self._prediction [labelled == i] = Labels.Masked
 
-        # re-label the rest of the OD artifacts with Drusen
-        #self._prediction[self._prediction == Labels.OD] = Labels.Drusen
+        # morphological opening to remove spurious labels areas
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+        self._prediction = cv2.morphologyEx(self._prediction, cv2.MORPH_OPEN, kernel)
+
         self.display_current(self._prediction)
 
-    def mask_off_blood_vessels(self):
-
-        # predictions should exist by now
-        assert(self._prediction.size > 0 ), "Prediction labels not computed"
-
-        # get blood
-        self._blood_vessel_markers = self._blood.detect_vessels()
-
-        # need to rescale the mask back to original size
-        # the mask gets scaled down during haar transform of ExtractBloodVessels
-        self._blood_markers = ImageReader.rescale_mask(self.image, self._blood_vessel_markers)
-
-        # mask off blood vessels
-        self._prediction [self._blood_markers != 0] = Labels.BloodVessel
-
-        # now mask off everything blood-vessels adjacent.
-
+def eliminate_vessel_neighbors(self):
         # first get the regions to be masked
         drusen = self._get_predicted_region(Labels.Drusen)
         blood = self._get_predicted_region(Labels.Haemorage)
@@ -125,22 +122,18 @@ class DarkBrightDetector(KNeighborsRegions):
 
         # label them - we don't care about the labels.
         Bc = np.ones((9, 9))
-        regions, n_regions = mh.label(combined, Bc)
+        regions, n_regions = mh.label(vessels, Bc)
         vessel_regions, n_vessels = mh.label(vessels, Bc)
 
         seeds = []
         # find vessel seeds
-        for vessel in vessel_regions[1:]:
-            points = np.nonzero(vessel_regions[vessel_regions == vessel])
-            nonz = points.nonzero()
+        for vessel in range(1, vessel_regions.max() + 1):
+            nonz = np.nonzero(vessel_regions == vessel)
 
             # for OpenCV it's (x, y) i.e. (col, row)
-            seeds.append(nonz[1][0], nonz[0][0])
+            seeds.append((nonz[1][0], nonz[0][0]))
 
         # flood-fill all the regions with the BloodVessel mask
         for seed in seeds:
-            self._flood_fill(seed, self._prediction, Labels.BloodVessel, deltaHigh = math.abs(Labels.Masked - Labels.BloodVessel))
-
-        self.display_current(self._prediction)
-
-        
+            self._flood_fill(seed, self._prediction, Labels.BloodVessel, deltaHigh = Labels.Masked - Labels.BloodVessel)
+            

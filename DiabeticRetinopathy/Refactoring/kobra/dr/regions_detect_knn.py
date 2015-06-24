@@ -190,8 +190,6 @@ class KNeighborsRegions (ImageProcessor):
 
         # connectivity is 8 neighbors, fill mask with 255
         flags = 8 | ( 255 << 8 ) | cv2.FLOODFILL_FIXED_RANGE
-        cv2.floodFill(prediction, mask, ctr, newVal, deltaLow, deltaHigh, flags)
-
-        self.display_current(labels)
+        cv2.floodFill(labels, mask, ctr, newVal, deltaLow, deltaHigh, flags)
 
         return labels
