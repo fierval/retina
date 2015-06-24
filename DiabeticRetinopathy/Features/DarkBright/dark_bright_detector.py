@@ -102,7 +102,7 @@ class DarkBrightDetector(KNeighborsRegions):
             self._prediction [labelled == i] = Labels.Masked
 
         # morphological opening to remove spurious labels areas
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         self._prediction = cv2.morphologyEx(self._prediction, cv2.MORPH_OPEN, kernel)
 
         self.display_current(self._prediction)
