@@ -18,7 +18,7 @@ class DarkBrightDetector(KNeighborsRegions):
     Detect bright/dark spots.
     Drusen/Exudates (bright) and haemorages/aneurisms (dark) detected
     '''
-    def __init__(self, root, orig_path, im_file, annotations, masks_dir, n_neighbors = 3, is_debug = True):
+    def __init__(self, root, orig_path, im_file, masks_dir, annotations = "annotations.txt", n_neighbors = 3, is_debug = True):
 
         KNeighborsRegions.__init__(self, root, im_file, annotations, masks_dir, n_neighbors)
         self._prediction = np.array([])
@@ -43,26 +43,30 @@ class DarkBrightDetector(KNeighborsRegions):
         self._labels =  [Labels.Drusen, Labels.Drusen, Labels.Background, Labels.Background, 
                     Labels.CameraHue, Labels.CameraHue, 
                     Labels.Haemorage, Labels.Haemorage, Labels.OD, Labels.OD]
+    @property
+    def prediction(self):
+        return self._prediction
 
     def display_current(self, prediction, with_camera = False):
         if self._is_debug:
             self.display_artifact(prediction, Labels.Drusen, (0, 255, 0), "Drusen")
             self.display_artifact(prediction, Labels.Haemorage, (0, 0, 255), "Haemorages")
 
-    def _get_predicted_region(self, label):
+    def get_predicted_region(self, label):
         '''
         Get a copy of the prediction matrix 
         where everything except for the 'label' is masked off
         '''
         region = self._prediction.copy()
         region [region != label] = 0
+        region [self.mask == 0] = 0
         return region
 
     def _mask_off_od(self):
         assert (self._prediction.size > 0), "Prediction must be computed"
 
-        drusen = self._get_predicted_region(Labels.Drusen)
-        od = self._get_predicted_region(Labels.OD)
+        drusen = self.get_predicted_region(Labels.Drusen)
+        od = self.get_predicted_region(Labels.OD)
 
         combined = drusen + od
         combined [combined != 0] = 255
@@ -80,11 +84,10 @@ class DarkBrightDetector(KNeighborsRegions):
 
         self._prediction[labels == od_region_susp_1] = Labels.Masked
 
-    def find_bright_regions(self, thresh = 0.003, abs_area = 50):
+    def find_bright_regions(self, thresh = 0.005):
         '''
         Finds suspicious bright regions, refines the prediction by:
         - Removing areas of large size: >= image * thresh
-        - and small size: <= abs_area
         '''
         assert( 0 < thresh < 1), "Threshold is in (0, 1)"
         if self._prediction.size == 0:
@@ -92,7 +95,7 @@ class DarkBrightDetector(KNeighborsRegions):
 
         # mask off OD - assumed to be the largest bright area
         self._mask_off_od()
-        drusen = self._get_predicted_region(Labels.Drusen).astype('uint8')
+        drusen = self.get_predicted_region(Labels.Drusen).astype('uint8')
         drusen [drusen != 0] = 255
 
         # get blood
@@ -105,45 +108,39 @@ class DarkBrightDetector(KNeighborsRegions):
         # mask off blood vessels
         self._prediction [self._blood_markers != 0] = Labels.BloodVessel
 
-        # relable remaining "OD" elements
-        #self._prediction[self._prediction == Labels.OD] = Labels.Drusen
+        # cutoff area
+        area = cv2.countNonZero(self._mask) * thresh
 
-        ## cutoff area
-        #area = cv2.countNonZero(self._mask) * thresh
-
-        ## get bright regions and combine them
-        #ods = self._get_predicted_region(Labels.OD)
-        #drusen = self._get_predicted_region(Labels.Drusen)
-        #blood = self._get_predicted_region(Labels.Haemorage)
-        #combined = ods + drusen + blood
+        # get bright regions and combine them
+        ods = self.get_predicted_region(Labels.OD)
+        drusen = self.get_predicted_region(Labels.Drusen)
+        blood = self.get_predicted_region(Labels.Haemorage)
+        combined = ods + drusen + blood
               
-        ## relabel the combined regions & calculate large removable regions
-        ## this will remove OD and related effects
-        #labelled, n = mh.label(combined, Bc = np.ones((9, 9)))
-        #sizes = mh.labeled.labeled_size(labelled)[1:]
-        #to_remove = np.argwhere(sizes >= area) + 1        
-
-        ##compute small regions to be removed
-        #to_remove_small = np.argwhere(sizes <= abs_area) + 1
-        #to_remove = np.r_[to_remove, to_remove_small]
-
-        ## remove large areas from prediction matrix
-        #for i in to_remove:
-        #    self._prediction [labelled == i] = Labels.Masked
+        # relabel the combined regions & calculate large removable regions
+        # this will remove OD and related effects
+        labelled, n = mh.label(combined, Bc = np.ones((5, 5)))
+        sizes = mh.labeled.labeled_size(labelled)[1:]
+        to_remove = np.argwhere(sizes >= area) + 1        
+        
+        # remove large areas from prediction matrix
+        for i in to_remove:
+            self._prediction [labelled == i] = Labels.Masked
 
         # morphological opening to remove spurious labels areas
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         self._prediction = cv2.morphologyEx(self._prediction, cv2.MORPH_OPEN, kernel)
 
         self.display_current(self._prediction)
+        return self._prediction
 
 def eliminate_vessel_neighbors(self):
         # first get the regions to be masked
-        drusen = self._get_predicted_region(Labels.Drusen)
-        blood = self._get_predicted_region(Labels.Haemorage)
+        drusen = self.get_predicted_region(Labels.Drusen)
+        blood = self.get_predicted_region(Labels.Haemorage)
 
         # and the vessel region
-        vessels = self._get_predicted_region(Labels.BloodVessel)
+        vessels = self.get_predicted_region(Labels.BloodVessel)
         combined = drusen + blood + vessels
 
         # mark regions of interest

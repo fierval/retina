@@ -7,7 +7,7 @@
     <ProjectHome>.</ProjectHome>
     <StartupFile>
     </StartupFile>
-    <SearchPath>Features\;Learning\;Features\DarkBright\;Features\Blood\</SearchPath>
+    <SearchPath>Features\;Learning\;Features\DarkBright\</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>DiabeticRetinopathy</Name>
@@ -22,6 +22,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Features\extract_features.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Refactoring\kobra\dr\blood_detection.py" />
     <Compile Include="Features\DarkBright\dark_bright_detector.py" />
     <Compile Include="Refactoring\kobra\dr\regions_detect_knn.py" />
