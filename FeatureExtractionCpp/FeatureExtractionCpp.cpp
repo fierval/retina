@@ -30,21 +30,6 @@ string contouredWindow("Contoured");
 ParamBag params;
 unique_ptr<HaemoragingImage> haemorage(new HaemoragingImage);
 
-vector<vector<Point>> * FindHaemorages(unique_ptr<HaemoragingImage>&, Mat&, ParamBag&);
-
-void thresh_callback(int, void *)
-{
-    unique_ptr<vector<vector<Point>>> contours(FindHaemorages(haemorage, src, params));
-
-    Mat img;
-    src.copyTo(img);
-    TransformImage::DrawContours(*contours, vector<Vec4i>(), img);
-
-    /// Draw contours
-    /// Show in a window
-    imshow(sourceWindow, img);
-}
-
 void CreateDir(fs::path out_path)
 {
     if (fs::exists(out_path))
