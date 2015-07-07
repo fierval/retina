@@ -3,12 +3,9 @@ import pandas as pd
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 from os import path
-import os
-import shutil
 from kobra.tr_utils import append_to_arr
-from kobra.imaging import show_images, pyr_blurr
+from kobra.imaging import show_images
 from kobra import enum
-from kobra.dr.retina import find_eye
 from kobra.dr import ImageProcessor
 
 # annotation labels

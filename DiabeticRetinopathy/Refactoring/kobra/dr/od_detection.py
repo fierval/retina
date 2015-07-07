@@ -2,7 +2,7 @@ import cv2
 import pandas as pd
 import numpy as np
 from kobra.imaging import show_images
-from kobra.image_reader import ImageReader
+from image_reader import ImageReader
 from os import path
 from imutils import translate
 
