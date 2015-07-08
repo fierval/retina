@@ -56,8 +56,6 @@ class KNeighborsRegions (ImageProcessor):
         self._avg_pixels = np.array([])
         self._labels = None
         
-        self._process_annotations()        
-
     def _process_annotations(self):
         # files from which annotations were extracted
         self._files = self._pd_annotations[0].as_matrix()
@@ -116,6 +114,14 @@ class KNeighborsRegions (ImageProcessor):
     def labels(self):
         return self._labels
 
+    @property
+    def avg_pixels(self):
+        return self._avg_pixels
+
+    @avg_pixels.setter
+    def avg_pixels(self, val):
+        self._avg_pixels = val
+
     @labels.setter
     def labels(self, val):
         self._labels = val
@@ -160,8 +166,8 @@ class KNeighborsRegions (ImageProcessor):
         '''
 
         if self._avg_pixels.size == 0:
+            self._process_annotations()        
             self._get_initial_classes()
-        
         
         im = self._image
         rows = im.shape[0]
