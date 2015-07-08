@@ -76,6 +76,9 @@ class DarkBrightDetector(KNeighborsRegions):
 
         # heuristic for finding optic disk. Sometimes a camera flare region 
         # may get in the way (hopefully just one)
+        if (sizes[1:].size == 0):
+            return
+
         od_region_susp_1 = np.argmax(sizes[1:]) + 1
         sizes [od_region_susp_1] = 0
         od_region_susp_2 = np.argmax(sizes[1:]) + 1
