@@ -1,5 +1,4 @@
 from sklearn.ensemble import GradientBoostingClassifier
-from environment import sample_file
 from sklearn.cross_validation import train_test_split
 from kobra import SKSupervisedLearning
 from kobra import TrainFiles
@@ -8,28 +7,6 @@ from kobra.tr_utils import time_now_str
 import numpy as np
 import time
 from sklearn.metrics.metrics import confusion_matrix
-
-def plot_confusion(sl):
-    conf_mat = confusion_matrix(sl.Y_test, sl.clf.predict(sl.X_test_scaled)).astype(dtype='float')
-    norm_conf_mat = conf_mat / conf_mat.sum(axis = 1)[:, None]
-
-    fig = plt.figure()
-    plt.clf()
-    ax = fig.add_subplot(111)
-    ax.set_aspect(1)
-    res = ax.imshow(norm_conf_mat, cmap=plt.cm.jet, 
-                    interpolation='nearest')
-    cb = fig.colorbar(res)
-    labs = np.unique(Y_test)
-    x = labs
-
-    plt.xticks(x, labs)
-    plt.yticks(x, labs)
-
-    for i in x:
-        for j in x:
-            ax.text(i - 0.2, j + 0.2, "{:3.0f}".format(norm_conf_mat[j, i] * 100.))
-    return conf_mat
 
 X_train, Y_train, X_test, Y_test = TrainFiles.from_csv(sample_file, test_size = 0.2)
 print "Read, train: {:d}, test: {:d}".format(X_train.shape[0], X_test.shape[0])

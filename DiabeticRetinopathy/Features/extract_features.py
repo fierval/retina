@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-#from dark_bright_detector import DarkBrightDetector
 from kobra.dr import Labels
 from kobra import TrainFiles
 from kobra.tr_utils import prep_out_path, time_now_str

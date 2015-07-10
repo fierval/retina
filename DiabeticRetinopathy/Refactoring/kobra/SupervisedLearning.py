@@ -1,11 +1,12 @@
 import numpy as np
 from sklearn.grid_search import GridSearchCV
-
+import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
 from sklearn import preprocessing as prep
 
 
 from tr_utils import merge_two_dicts, isEmpty
+from sklearn.metrics.metrics import confusion_matrix
 
 class SKSupervisedLearning (object):
     """
@@ -199,4 +200,26 @@ class SKSupervisedLearning (object):
         '''
         Return actual prediction on a set where we don't have labels
         '''
-        return self.clf.predict_proba(X_actual_test)    
+        return self.clf.predict_proba(X_actual_test)
+
+    def plot_confusion(self):
+        conf_mat = confusion_matrix(self.Y_test, self.clf.predict(self.X_test_scaled)).astype(dtype='float')
+        norm_conf_mat = conf_mat / conf_mat.sum(axis = 1)[:, None]
+
+        fig = plt.figure()
+        plt.clf()
+        ax = fig.add_subplot(111)
+        ax.set_aspect(1)
+        res = ax.imshow(norm_conf_mat, cmap=plt.cm.jet, 
+                        interpolation='nearest')
+        cb = fig.colorbar(res)
+        labs = np.unique(Y_test)
+        x = labs
+
+        plt.xticks(x, labs)
+        plt.yticks(x, labs)
+
+        for i in x:
+            for j in x:
+                ax.text(i - 0.2, j + 0.2, "{:3.0f}".format(norm_conf_mat[j, i] * 100.))
+        return conf_mat

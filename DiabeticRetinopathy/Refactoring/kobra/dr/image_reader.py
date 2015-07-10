@@ -8,15 +8,14 @@ class ImageReader(object):
     Reads images and their masks
     '''
 
-    def __init__(self, root, im_file, masks_dir):
+    def __init__(self, root, im_file, masks_dir, gray_scale = False):
         self._im_file = path.join(root, im_file)
         self._masks_dir = masks_dir
 
         assert (path.exists(self._im_file)), "Image does not exist"
         assert (path.exists(self._masks_dir)), "Masks dir does not exist"
 
-        # green channel image
-        self._image = cv2.imread(self._im_file)
+        self._image = cv2.imread(self._im_file, cv2.IMREAD_GRAYSCALE if gray_scale else cv2.IMREAD_COLOR)
         self._mask = self.get_mask()
         self._image [ self._mask == 0] = 0
 
