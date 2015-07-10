@@ -10,7 +10,7 @@ from pandas.io.parsers import csv
 def prep_out_path(out_path):
     if path.exists(out_path):
         shutil.rmtree(out_path)
-    os.mkdir(out_path)
+    os.makedirs(out_path)
 
 def append_to_arr(arr, a, axis = 0):
     '''
