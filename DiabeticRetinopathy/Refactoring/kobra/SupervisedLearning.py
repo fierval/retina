@@ -6,7 +6,7 @@ from sklearn import preprocessing as prep
 
 
 from tr_utils import merge_two_dicts, isEmpty
-from sklearn.metrics.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix
 
 class SKSupervisedLearning (object):
     """
