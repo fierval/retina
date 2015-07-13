@@ -13,7 +13,6 @@ import cv2
 from kobra.dr import ImageReader
 import time
 
-proc_path = '/kaggle/retina/reduced/train'
 labels_file =  '/kaggle/retina/trainLabels.csv'
 root = '/kaggle/retina/reduced/sample'
 
