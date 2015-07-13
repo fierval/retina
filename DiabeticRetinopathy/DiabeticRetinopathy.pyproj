@@ -43,7 +43,7 @@
     <Compile Include="Learning\get_sample.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Learning\gradient_boosting.py">
+    <Compile Include="Learning\learning.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Refactoring\kobra\dr\image_reader.py" />

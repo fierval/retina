@@ -190,11 +190,14 @@ class SKSupervisedLearning (object):
 
         self.clf.fit(X_train, Y_train)
 
-        # get probabilities
-        self._proba_train = self.clf.predict_proba(X_train)
-        self._proba_test = self.clf.predict_proba(X_test)
+        if self.scoring == 'accuracy':
+            return metrics.accuracy_score(self.Y_train, self.clf.predict(self.X_train_scaled)), np.array([]) if isEmpty(Y_test) else metrics.accuracy_score(Y_test, self.clf.predict(self.X_test_scaled))
+        else: #log_loss
+            # get probabilities
+            self._proba_train = self.clf.predict_proba(X_train)
+            self._proba_test = self.clf.predict_proba(X_test)
 
-        return metrics.log_loss(Y_train, self.proba_train), np.array([]) if isEmpty(Y_test) else metrics.log_loss(Y_test, self.proba_test)
+            return metrics.log_loss(Y_train, self.proba_train), np.array([]) if isEmpty(Y_test) else metrics.log_loss(Y_test, self.proba_test)
 
     def predict_actual(self, X_actual_test):
         '''
@@ -213,7 +216,7 @@ class SKSupervisedLearning (object):
         res = ax.imshow(norm_conf_mat, cmap=plt.cm.jet, 
                         interpolation='nearest')
         cb = fig.colorbar(res)
-        labs = np.unique(Y_test)
+        labs = np.unique(self.Y_test)
         x = labs
 
         plt.xticks(x, labs)
