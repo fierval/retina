@@ -28,6 +28,9 @@
     <Compile Include="Features\extract_training_feats.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Learning\predict.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Refactoring\kobra\dr\blood_detection.py" />
     <Compile Include="Features\DarkBright\dark_bright_detector.py" />
     <Compile Include="Refactoring\kobra\dr\regions_detect_knn.py" />

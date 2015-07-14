@@ -191,7 +191,10 @@ class SKSupervisedLearning (object):
         self.clf.fit(X_train, Y_train)
 
         if self.scoring == 'accuracy':
-            return metrics.accuracy_score(self.Y_train, self.clf.predict(self.X_train_scaled)), np.array([]) if isEmpty(Y_test) else metrics.accuracy_score(Y_test, self.clf.predict(self.X_test_scaled))
+            a_train = metrics.accuracy_score(Y_train, self.clf.predict(X_train))
+            a_test = np.array([]) if isEmpty(Y_test) else metrics.accuracy_score(Y_test, self.clf.predict(X_test))
+            return a_train, a_test
+
         else: #log_loss
             # get probabilities
             self._proba_train = self.clf.predict_proba(X_train)
@@ -206,7 +209,9 @@ class SKSupervisedLearning (object):
         return self.clf.predict_proba(X_actual_test)
 
     def plot_confusion(self):
-        conf_mat = confusion_matrix(self.Y_test, self.clf.predict(self.X_test_scaled)).astype(dtype='float')
+        X_train, X_test = self._pick_examples()
+
+        conf_mat = confusion_matrix(self.Y_test, self.clf.predict(X_test)).astype(dtype='float')
         norm_conf_mat = conf_mat / conf_mat.sum(axis = 1)[:, None]
 
         fig = plt.figure()
