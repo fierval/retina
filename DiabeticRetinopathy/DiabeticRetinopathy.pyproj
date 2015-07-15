@@ -28,6 +28,9 @@
     <Compile Include="Features\extract_training_feats.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Learning\learn_boost.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Learning\predict.py">
       <SubType>Code</SubType>
     </Compile>
