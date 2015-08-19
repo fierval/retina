@@ -92,16 +92,12 @@ private:
 
         for (int i = 0; i < img.cols; i++)
         {
-            uchar curMin = std::abs(histSource[i] - histRef[0]);
-            for (int j = 1; j < ref.cols; j++)
-            {
-                int diff = std::abs(histSource[i] - histRef[j]);
-                if (diff < curMin)
-                {
-                    curMin = diff;
-                    map[i] = (uchar)j;
-                }
-            }
+            vector<uchar> diffs(histRef.size());
+
+            std::transform(histRef.begin(), histRef.end(), diffs.begin(), [histSource, i](uchar r){return std::abs(histSource[i] - r); });
+            
+            auto min_dist = std::min_element(diffs.begin(), diffs.end());
+            map[i] = std::distance(diffs.begin(), min_dist);
         }
         // This creates a 255x1 Mat
         Mat res(map);
