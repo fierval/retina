@@ -144,9 +144,9 @@ public:
 
         clahe->setClipLimit(4.);
         clahe->setTilesGridSize(Size(16, 16));
-        clahe->apply(g_oneChannel[(int)_channel], g_enhanced);
+        clahe->apply(g_oneChannel[(int)_channel], g_buf);
         
-        g_enhanced.copyTo(g_oneChannel[(int)_channel]);
+        g_buf.copyTo(g_oneChannel[(int)_channel]);
         
         gpu::merge(g_oneChannel, g_enhanced);
         return g_enhanced;
