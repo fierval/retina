@@ -127,18 +127,18 @@ class KNeighborsRegions (ImageProcessor):
         self._labels = val
 
     def display_average_pixels(self):
-        if self._avg_pixels == None:
+        if len(self.avg_pixels) == 0:
             self._get_initial_classes()
 
         def stretch_image(i):
             pixel = self._avg_pixels[i]
-            stretch = np.zeros((20, 20, 3), dtype='uint8')
+            stretch = np.zeros((10, 10, 3), dtype='uint8')
             stretch[:, :] = pixel
             return stretch
 
         images = [stretch_image(i) for i in range(0, self._n_objects)]
 
-        show_images(images)
+        show_images(images, scale = 2.5)
 
     
     def display_artifact(self, prediction, artifact, color, title):
