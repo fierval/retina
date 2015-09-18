@@ -1,4 +1,4 @@
-from matplotlib import pyplot as plt
+﻿from matplotlib import pyplot as plt
 from matplotlib import cm
 from os import path
 import numpy as np
@@ -26,6 +26,7 @@ def show_images(images,titles=None, scale=1.3):
         n += 1
     fig.set_size_inches(np.array(fig.get_size_inches(), dtype=np.float) * n_ims / scale)
     plt.show()
+    plt.close()
     
 # Pyramid Down & blurr
 # Easy-peesy
