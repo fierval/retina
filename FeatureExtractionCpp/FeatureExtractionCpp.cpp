@@ -16,6 +16,7 @@ const char* keys =
     "{d|debug||invoke debugging functionality}"
     "{t|threshold|12|Canny threshold}"
     "{scale||1|image scale}"
+    "{m|mask|1|should mask}"
 
 };
 
@@ -80,6 +81,7 @@ void do_debug(CommandLineParser& parser)
     int dim = parser.get<int>("size");
     int thresh = parser.get<int>("t");
     float scale = parser.get<float>("scale");
+    int shouldMask = parser.get<int>("mask");
 
     Size size(dim, dim);
 
@@ -92,7 +94,16 @@ void do_debug(CommandLineParser& parser)
     auto hi = HaemoragingImage(rgb);
 
     Mat mask;
-    CreateMask(hi, thresh, mask);
+    if (shouldMask == 1)
+    {
+        CreateMask(hi, thresh, mask);
+    }
+    else
+    {
+        mask = Mat::zeros(hi.getImage().size(), CV_8UC1);
+        mask = Scalar(255);
+    }
+
 
     namedWindow(targetWindow, WINDOW_NORMAL);
     imshow(targetWindow, rgb);
@@ -102,8 +113,18 @@ void do_debug(CommandLineParser& parser)
 
     // show image contours and filter its background
     HaemoragingImage ref_haem(reference);
+
     Mat refMask;
-    CreateMask(ref_haem, thresh, refMask);
+    if (shouldMask == 1)
+    {
+        CreateMask(ref_haem, thresh, refMask);
+    }
+    else
+    {
+        refMask = Mat::zeros(ref_haem.getImage().size(), CV_8UC1);
+        refMask = Scalar(255);
+    }
+
 
     namedWindow(sourceWindow, WINDOW_NORMAL);
     imshow(sourceWindow, reference);
@@ -120,7 +141,10 @@ void do_debug(CommandLineParser& parser)
 
     //3. CLAHE
     hi.setImage(dest);
-    hi.MaskOffBackground(mask);
+    if (shouldMask)
+    {
+        hi.MaskOffBackground(mask);
+    }
 
     Mat hsv;
     cvtColor(hi.getEnhanced(), hsv, COLOR_BGR2HSV);
@@ -154,7 +178,7 @@ void do_debug(CommandLineParser& parser)
 //5. Histogram equalization (CLAHE) on V channel of the HSV image
 //6. Resize to size x size
 //7. Write to out_path
-void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, fs::path mask_path, Size& size, float scale = 1.0)
+void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs::path& out_path, fs::path mask_path, Size& size, float scale = 1.0, int shouldMask = 1)
 {
     int thresh = params.cannyThresh;
     bool doResize = size.width > 0;
@@ -193,7 +217,16 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
 
         // 2. Find contours, get mask.
         // if we did not get the entire eye - reset the threhsold to 1 and repeat
-        CreateMask(hi, thresh, mask);
+        if (shouldMask == 1)
+        {
+            CreateMask(hi, thresh, mask);
+        }
+        else
+        {
+            mask = Mat::ones(rgb.size(), CV_8UC1);
+            mask = Scalar(255);
+        }
+
 
         // 3. Histogram specification
         Mat dest;
@@ -203,7 +236,10 @@ void process_files(string& ref, fs::path& in_path, vector<string>& in_files, fs:
         hi.setImage(dest);
 
         //5. Apply mask to filter background noise
-        hi.MaskOffBackground(mask);
+        if (shouldMask)
+        {
+            hi.MaskOffBackground(mask);
+        }
 
         Mat hsv;
         cvtColor(hi.getEnhanced(), hsv, COLOR_BGR2HSV);
@@ -245,6 +281,8 @@ int main(int argc, char** argv)
     string ref = parser.get<string>("ref");
     params.cannyThresh = parser.get<int>("t");
     float scale = parser.get<float>("scale");
+    int shouldMask = parser.get<int>("mask");
+
 
     int dim = parser.get<int>("size");
     Size size(dim, dim);
@@ -289,7 +327,7 @@ int main(int argc, char** argv)
     closedir(dir);
 
     Stopwatch sw;
-    process_files(ref, in_path, in_files, out_path, mask_path, size, scale);
+    process_files(ref, in_path, in_files, out_path, mask_path, size, scale, shouldMask);
     sw.tick();
     cout << "Elapsed: " << sw.Elapsed() << "sec." << endl;
     return(0);

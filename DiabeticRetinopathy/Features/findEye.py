@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 import cv2
 from os import path
 import os
@@ -64,10 +64,8 @@ while True:
 
     thresh = cv2.getTrackbarPos("Threshold", "Source")
 
-    edges = np.array([])
-    edges = cv2.Canny(srcG, thresh, thresh * 3, edges, 3)
-
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    ret, thresholded = cv2.threshold(srcG, thresh, thresh * 3, 0)
+    _, contours, _ = cv2.findContours(thresholded, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     #polys = cv2.approxPolyDP(contours[0], 5, True)
     #for cnt in contours[1:]:
