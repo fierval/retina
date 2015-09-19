@@ -195,3 +195,6 @@ def max_labelled_region(labels, Bc = None):
     Labelled region of maximal area
     '''
     return np.argmax(mh.labeled.labeled_size(labels)[1:]) + 1
+
+def saturate (v):
+    return map(lambda a: min(max(round(a), 0), 255), v)
