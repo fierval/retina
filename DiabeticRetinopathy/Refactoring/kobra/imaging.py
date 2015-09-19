@@ -198,3 +198,10 @@ def max_labelled_region(labels, Bc = None):
 
 def saturate (v):
     return map(lambda a: min(max(round(a), 0), 255), v)
+
+
+def plot_hist(hst, color):
+    fig = plt.figure()
+    plt.bar(np.arange(256), hst, width=2, color=color, edgecolor='none')
+    fig.set_size_inches(np.array(fig.get_size_inches(), dtype=np.float) * 2)
+    plt.show()
